@@ -1,13 +1,12 @@
 # Installing dependencies
-git submodule add https://github.com/Synedh/showdown-battle-bot
-git submodule add https://github.com/Zarel/Pokemon-Showdown
+git clone https://github.com/Synedh/showdown-battle-bot
+git clone https://github.com/Zarel/Pokemon-Showdown
 
 git submodule init 
 git submodule update
 
 # Showdown requieres node.js
-curl -sL https://deb.nodesource.com/setup_11.x | sudo -E bash -
-sudo apt-get install -y nodejs
+brew install nodejs
 
 # Installing the server
 cd Pokemon-Showdown
