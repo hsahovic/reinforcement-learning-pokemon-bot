@@ -132,6 +132,7 @@ class Battle:
         :param websocket: Websocket stream.
         :param best_move: [int, int] : [id of best move, value].
         """
+        print('MOVE MADE ???')
         if not best_move:
             best_move = make_best_move(self)
         if best_move[1] < 20:

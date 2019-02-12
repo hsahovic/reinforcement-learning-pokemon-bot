@@ -1,4 +1,8 @@
 {
-    "username" : 0,
-    "password" : 0
+  "users": [
+    { "username": "inf581_bot_1", "password": "INF581_BOT_1" },
+    { "username": "inf581_bot_2", "password": "INF581_BOT_2" }
+  ],
+  "searchBattles": true,
+  "toChallenge": "bot_receiver"
 }
