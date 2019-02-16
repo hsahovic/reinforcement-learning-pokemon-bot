@@ -12,13 +12,14 @@ class Battle:
     Unique for each battle.
     Handle everything concerning it.
     """
-    def __init__(self, battletag):
+    def __init__(self, battletag, username):
         """
         init Battle method.
         :param battletag: String, battletag of battle.
         """
         self.bot_team = Team()
         self.enemy_team = Team()
+        self.username = username
         self.current_pkm = None
         self.turn = 0
         self.battletag = battletag

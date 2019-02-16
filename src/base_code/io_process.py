@@ -20,7 +20,7 @@ FORMATS = [
 ]
 
 
-def check_battle(battle_list, battletag) -> Battle or None:
+def check_battle(battle_list, battletag, username) -> Battle or None:
     """
     Get Battle corresponding to room_id.
     :param battle_list: Array of Battles.
@@ -28,7 +28,7 @@ def check_battle(battle_list, battletag) -> Battle or None:
     :return: Battle.
     """
     for battle in battle_list:
-        if battle.battletag == battletag:
+        if battle.battletag == battletag and battle.username == username:
             return battle
     return None
 
@@ -42,13 +42,13 @@ async def battle_tag(websocket, message, usage, username):
     global battles
     import time
     lines = message.splitlines()
-    battle = check_battle(battles, lines[0].split("|")[0].split(">")[1])
+    battle = check_battle(battles, lines[0].split("|")[0].split(">")[1], username)
     for line in lines[1:]:
         try:
             current = line.split('|')
             if current[1] == "init":
                 # Creation de la bataille
-                battle = Battle(lines[0].split("|")[0].split(">")[1])
+                battle = Battle(lines[0].split("|")[0].split(">")[1], username)
                 battles.append(battle)
                 await senders.sendmessage(websocket, battle.battletag, "Hi")
                 await senders.sendmessage(websocket, battle.battletag, "/timer on")
@@ -120,9 +120,9 @@ async def stringing(websocket, message, username, password, usage=0,*,to_challen
         await log_in(websocket, string_tab[2], string_tab[3], username, password)
     elif string_tab[1] == "updateuser" and string_tab[2] == username:
         # Once we are connected.
-        print(usage, to_challenge)
         if usage == 1 and to_challenge:
-            await senders.challenge(websocket, to_challenge, FORMATS[0])
+            for _ in range(20):
+                await senders.challenge(websocket, to_challenge, FORMATS[0])
         if usage == 2:
             await senders.searching(websocket, FORMATS[0])
             nb_fights += 1

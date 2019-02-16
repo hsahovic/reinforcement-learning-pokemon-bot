@@ -4,5 +4,6 @@
     { "username": "inf581_bot_2", "password": "INF581_BOT_2" }
   ],
   "searchBattles": true,
-  "toChallenge": "bot_receiver"
+  "toChallenge": "bot_receiver",
+  "local_adress" : "127.0.0.1:8000"
 }
