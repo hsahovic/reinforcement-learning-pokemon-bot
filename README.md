@@ -14,7 +14,11 @@ sh scripts/ubuntu-setup.sh
 
 ### Mac OS
 
-There is no setup file right now, but having one derived from `ubuntu-setup.sh` would be nice.
+Run
+
+```
+sh scripts/macos-setup.sh
+```
 
 ### Windows
 
@@ -24,9 +28,9 @@ We recommend using a Windows Linux Subsystem.
 
 You need to have a showdown server running on localhost (`node pokemon-showdown` in the `Pokemon-Showdown` folder).
 
-You can then run the project with `python3 src/main.py`. This will launch two bots trying to fight each other. 
+At this point, we are mainly building a proper OOP environnement before moving on to learning. To launch the current project, run `python3 src/main.py`.
 
-At this point in the project, the battle will quickly become stuck: we are working on it.
+If you just want to watch two bots fighting each other, run `python3 src/old_main.py`.
 
 ## Acknowledgements
 
