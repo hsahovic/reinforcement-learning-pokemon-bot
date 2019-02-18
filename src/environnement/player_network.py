@@ -51,6 +51,23 @@ class PlayerNetwork:
     async def accept_challenge(self, user:str) -> None:
         await self.send_message(f"/accept {user}")
 
+    async def challenge(self, player=None, format=None):
+        if not self.logged_in:
+            return
+
+        if player is None:
+            player = self.to_target
+        if format is None:
+            format = self.format
+
+        if player and format:
+            await self.send_message(f"/challenge {player}, {format}")
+        else:
+            print(f"No player or format specified in call to 'challenge' from {self}\nplayer: {player}\nformat: {format}")
+            raise ValueError(
+                f"No player or format specified in call to 'challenge' from {self}\nplayer: {player}\nformat: {format}"
+            )
+
     async def listen(self) -> None:
         async with websockets.connect(self.websocket_adress) as websocket:
             self._websocket = websocket

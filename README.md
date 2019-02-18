@@ -32,6 +32,21 @@ At this point, we are mainly building a proper OOP environnement before moving o
 
 If you just want to watch two bots fighting each other, run `python3 src/old_main.py`.
 
+## What is implemented
+
+- Base PlayerNatework class. Responsible for managing player network interaction (eg. send and receive messages to the server) with as many utilities as deemed useful
+- Base Player class. Responsible for common player mecanisms. Right now, can challenge and receive challenges, but does not fight.
+- Mmm... That's about it 
+
+## Next steps
+
+- Working RandomRandomPlayer class. 
+- Battle class.
+- Pokemon class.
+- Storing fighting data.
+  
+Once this is done, we can start thinking about ML :)
+
 ## Acknowledgements
 
 We use [Pokemon Showdown](https://github.com/Zarel/Pokemon-Showdown) and our code is built upon the [showdown-battle-bot project](https://github.com/Synedh/showdown-battle-bot). 
