@@ -44,9 +44,14 @@ class Player(PlayerNetwork):
 
     async def run(self) -> None:
         if self.mode == "challenge":
+            await asyncio.sleep(1)
             while self.total_battles < self.target_battles:
-                print(self.username)
                 await self.challenge()
                 await asyncio.sleep(10)
-        else:
+        elif self.mode == "battle_online":
+            # TO DO: implement
             pass
+        elif self.mode == "wait":
+            pass
+        else:
+            raise ValueError(f"Unknown mode {self.mode}. Please specify one of the following modes: 'challenge', 'wait', 'battle_online'")

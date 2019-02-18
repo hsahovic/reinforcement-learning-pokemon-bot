@@ -115,15 +115,14 @@ async def stringing(websocket, message, username, password, usage=0,*,to_challen
     global FORMATS
 
     string_tab = message.split('|')
-    if string_tab[1] == "challstr":
+    if string_tab[1] == "challstr": # reimplemented
         # If we got the challstr, we now can log in.
         await log_in(websocket, string_tab[2], string_tab[3], username, password)
     elif string_tab[1] == "updateuser" and string_tab[2] == username:
         # Once we are connected.
-        if usage == 1 and to_challenge:
-            for _ in range(20):
-                await senders.challenge(websocket, to_challenge, FORMATS[0])
-        if usage == 2:
+        if usage == 1 and to_challenge: # reimplemented
+            await senders.challenge(websocket, to_challenge, FORMATS[0])
+        if usage == 2: # reimplemented
             await senders.searching(websocket, FORMATS[0])
             nb_fights += 1
     elif string_tab[1] == "deinit" and usage == 2:
@@ -142,7 +141,7 @@ async def stringing(websocket, message, username, password, usage=0,*,to_challen
         # If somebody challenges the bot
         try:
             if string_tab[2].split('\"')[3] != "challengeTo":
-                if string_tab[2].split('\"')[5] in FORMATS:
+                if string_tab[2].split('\"')[5] in FORMATS: # reimplemented
                     await senders.sender(websocket, "", "/accept " + string_tab[2].split('\"')[3])
                 else:
                     await senders.sender(websocket, "", "/reject " + string_tab[2].split('\"')[3])

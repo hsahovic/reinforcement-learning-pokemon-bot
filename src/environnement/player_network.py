@@ -24,13 +24,11 @@ class PlayerNetwork:
 
         self._auth_adress = "https://play.pokemonshowdown.com/action.php?"
 
-    async def _log_in(self, conf_1: str, conf_2: str) -> bool:
+    async def _log_in(self, conf_1: str, conf_2: str) -> None:
         """
         Log in player to specified username.
         conf_1 and conf_2 are confirmation strings received upon server access.
         They are needed to log in.
-
-        Returns a boolean indicating connection status.
         """
         log_in_request = requests.post(
             self._auth_adress,
@@ -50,6 +48,9 @@ class PlayerNetwork:
         if self._avatar:
             await self.send_message(f"/avatar {self._avatar}")
 
+    async def accept_challenge(self, user:str) -> None:
+        await self.send_message(f"/accept {user}")
+
     async def listen(self) -> None:
         async with websockets.connect(self.websocket_adress) as websocket:
             self._websocket = websocket
@@ -68,6 +69,17 @@ class PlayerNetwork:
         if split_message[1] == "challstr":
             conf_1, conf_2 = split_message[2], split_message[3]
             await self._log_in(conf_1, conf_2)
+
+        # updatechallenges means that we received a challenge
+        elif "updatechallenges" in split_message[1]:
+            response = json.loads(split_message[2])
+            print(response)
+            for user, format in json.loads(split_message[2]).get('challengesFrom', {}).items():
+                if format == self.format:
+                    await self.accept_challenge(user)
+
+        elif "battle" in split_message:
+            pass
 
     async def send_message(
         self, message: str, room: str = "", message_2: str = None

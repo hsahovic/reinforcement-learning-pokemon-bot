@@ -7,6 +7,7 @@ global CONFIG
 
 CONFIG_PATH = "src/config.json"
 
+print(f"\n{'='*30} STARTING {'='*30}\n")
 
 async def main():
     players = [
