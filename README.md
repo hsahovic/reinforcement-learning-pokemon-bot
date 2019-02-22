@@ -35,14 +35,13 @@ If you just want to watch two bots fighting each other, run `python3 src/old_mai
 ## What is implemented
 
 - Base PlayerNatework class. Responsible for managing player network interaction (eg. send and receive messages to the server) with as many utilities as deemed useful
-- Base Player class. Responsible for common player mecanisms. Right now, can challenge and receive challenges, but does not fight.
-- Mmm... That's about it 
+- Base Player class. Responsible for common player mecanisms. In particular, it can challenge and receive challenges.
+- RandomRandomBattlePlayer. A player playing random battles in a random fashion. And it works !
 
 ## Next steps
 
-- Working RandomRandomPlayer class. 
-- Battle class.
-- Pokemon class.
+- Proper battle class.
+- Proper pokemon and related classes.
 - Storing fighting data.
   
 Once this is done, we can start thinking about ML :)
