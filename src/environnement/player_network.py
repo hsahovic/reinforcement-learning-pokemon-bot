@@ -2,8 +2,10 @@ import json
 import requests
 import websockets
 
+from abc import ABC, abstractmethod
 
-class PlayerNetwork:
+
+class PlayerNetwork(ABC):
     """
     Network interface of a player.
     
@@ -11,18 +13,30 @@ class PlayerNetwork:
     """
 
     def __init__(
-        self, username: str, password: str, server_adress: str, avatar: int = None
+        self,
+        username: str,
+        password: str,
+        *,
+        authentification_address: str,
+        avatar: int,
+        server_address: str,
     ) -> None:
         """
         Initialises interface.
         """
+
+        if authentification_address is None:
+            raise AttributeError(
+                "Unspecified authentification address. Please specify an authentification address."
+            )
+
         self._avatar = avatar
         self._logged_in = False
         self._password = password
-        self._server_adress = server_adress
+        self._server_address = server_address
         self._username = username
 
-        self._auth_adress = "https://play.pokemonshowdown.com/action.php?"
+        self._authentification_address = authentification_address
 
     async def _log_in(self, conf_1: str, conf_2: str) -> None:
         """
@@ -31,7 +45,7 @@ class PlayerNetwork:
         They are needed to log in.
         """
         log_in_request = requests.post(
-            self._auth_adress,
+            self._authentification_address,
             data={
                 "act": "login",
                 "name": self._username,
@@ -46,34 +60,35 @@ class PlayerNetwork:
 
         # If there is an avatar to select, let's select it !
         if self._avatar:
-            await self.send_message(f"/avatar {self._avatar}")
+            self.change_avatar(self._avatar)
 
-    async def accept_challenge(self, user:str) -> None:
-        await self.send_message(f"/accept {user}")
+    async def accept_challenge(self, user: str) -> None:
+        if self.can_accept_challenge:
+            await self.send_message(f"/accept {user}")
 
     async def challenge(self, player=None, format=None):
         if not self.logged_in:
             return
 
-        if player is None:
-            player = self.to_target
-        if format is None:
-            format = self.format
-
         if player and format:
             await self.send_message(f"/challenge {player}, {format}")
         else:
-            print(f"No player or format specified in call to 'challenge' from {self}\nplayer: {player}\nformat: {format}")
+            print(
+                f"No player or format specified in call to 'challenge' from {self}\nplayer: {player}\nformat: {format}"
+            )
             raise ValueError(
                 f"No player or format specified in call to 'challenge' from {self}\nplayer: {player}\nformat: {format}"
             )
 
+    async def change_avatar(self, avatar_id: str) -> None:
+        await self.send_message(f"/avatar {avatar_id}")
+
     async def listen(self) -> None:
-        async with websockets.connect(self.websocket_adress) as websocket:
+        async with websockets.connect(self.websocket_address) as websocket:
             self._websocket = websocket
-            while True:
+            while not self.should_die:
                 message = await websocket.recv()
-                print(f"\n<< {message}")
+                print(f"\n{self.username} << {message}")
                 await self.manage_message(message)
 
     async def manage_message(self, message: str) -> None:
@@ -87,16 +102,23 @@ class PlayerNetwork:
             conf_1, conf_2 = split_message[2], split_message[3]
             await self._log_in(conf_1, conf_2)
 
+        # TODO challenge sent
         # updatechallenges means that we received a challenge
         elif "updatechallenges" in split_message[1]:
             response = json.loads(split_message[2])
-            print(response)
-            for user, format in json.loads(split_message[2]).get('challengesFrom', {}).items():
+            for user, format in (
+                json.loads(split_message[2]).get("challengesFrom", {}).items()
+            ):
                 if format == self.format:
-                    await self.accept_challenge(user)
+                    if self.current_battles < self.target_battles:
+                        await self.accept_challenge(user)
 
-        elif "battle" in split_message:
+        elif "battle" in split_message[0]:
+            await self.battle(message)
+        elif split_message[1] == 'updatesearch':
             pass
+        else:
+            print(f"UNMANAGED MESSAGE : {message}")
 
     async def send_message(
         self, message: str, room: str = "", message_2: str = None
@@ -105,17 +127,27 @@ class PlayerNetwork:
             to_send = "|".join([room, message, message_2])
         else:
             to_send = "|".join([room, message])
-        print(f"\n>> {to_send}")
+        print(f"\n{self.username} >> {to_send}")
         await self._websocket.send(to_send)
+
+    @property
+    @abstractmethod
+    def can_accept_challenge(self) -> bool:
+        pass
 
     @property
     def logged_in(self) -> bool:
         return self._logged_in
 
     @property
+    @abstractmethod
+    def should_die(self) -> bool:
+        pass
+
+    @property
     def username(self) -> str:
         return self._username
 
     @property
-    def websocket_adress(self) -> str:
-        return f"ws://{self._server_adress}/showdown/websocket"
+    def websocket_address(self) -> str:
+        return f"ws://{self._server_address}/showdown/websocket"

@@ -6,23 +6,28 @@ from environnement.players.random_random_battle import RandomRandomBattlePlayer
 global CONFIG
 
 CONFIG_PATH = "src/config.json"
-
-print(f"\n{'='*30} STARTING {'='*30}\n")
+TARGET_BATTLES = 10
 
 async def main():
+    # TODO : investigate concurrency
     players = [
         RandomRandomBattlePlayer(
-            CONFIG["users"][0]["username"],
-            CONFIG["users"][0]["password"],
-            CONFIG["local_adress"],
+            authentification_address=CONFIG["authentification_address"],
+            max_concurrent_battles=1,
             mode="challenge",
+            password=CONFIG["users"][0]["password"],
+            server_address=CONFIG["local_adress"],
+            target_battles=TARGET_BATTLES,
             to_target=CONFIG["users"][1]["username"],
+            username=CONFIG["users"][0]["username"],
         ),
         RandomRandomBattlePlayer(
-            CONFIG["users"][1]["username"],
-            CONFIG["users"][1]["password"],
-            CONFIG["local_adress"],
+            authentification_address=CONFIG["authentification_address"],
             mode="wait",
+            password=CONFIG["users"][1]["password"],
+            server_address=CONFIG["local_adress"],
+            target_battles=TARGET_BATTLES,
+            username=CONFIG["users"][1]["username"],
         ),
     ]
 
@@ -36,6 +41,7 @@ async def main():
 
 
 if __name__ == "__main__":
+    print(f"\n{'='*30} STARTING {'='*30}\n")
     with open(CONFIG_PATH) as f:
         CONFIG = json.load(f)
     asyncio.get_event_loop().run_until_complete(main())
