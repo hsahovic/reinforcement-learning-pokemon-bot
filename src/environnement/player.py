@@ -7,7 +7,7 @@ from typing import List
 from environnement.battle import Battle
 from environnement.player_network import PlayerNetwork
 
-from abc import ABC
+from abc import ABC, abstractmethod
 
 
 class Player(PlayerNetwork, ABC):
@@ -88,7 +88,7 @@ class Player(PlayerNetwork, ABC):
                 if split_message[2]:
                     current_battle.update_team(json.loads(split_message[2]))
                 if current_battle.is_ready:
-                    await self.select_move(current_battle, anticipate_turn=True)
+                    await self.select_move(current_battle)
 
             elif split_message[1] == "callback" and split_message[2] == "trapped":
                 await self.select_move(current_battle, trapped=True)
