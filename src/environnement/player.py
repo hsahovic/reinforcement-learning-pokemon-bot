@@ -114,6 +114,7 @@ class Player(PlayerNetwork, ABC):
             elif split_message[1] == "win":
                 current_battle.won_by(split_message[2])
                 self.current_battles -= 1
+                self.leave_battle(current_battle)
             else:
                 pass
 
@@ -125,7 +126,7 @@ class Player(PlayerNetwork, ABC):
             while self.total_battles < self.target_battles:
                 if self.can_accept_challenge:
                     await self.challenge(self.to_target, self.format)
-                await asyncio.sleep(0.2)
+                await asyncio.sleep(0.1)
         elif self.mode == "battle_online":
             # TODO: implement
             pass
@@ -145,7 +146,7 @@ class Player(PlayerNetwork, ABC):
 
     @property
     def should_die(self) -> bool:
-        return (self.total_battles + self.current_battles > self.target_battles) or (
+        return (self.total_battles > self.target_battles) or (
             self.total_battles == self.target_battles and self.current_battles == 0
         )
 

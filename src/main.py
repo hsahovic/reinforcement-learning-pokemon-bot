@@ -2,18 +2,20 @@ import asyncio
 import json
 
 from environnement.players.random_random_battle import RandomRandomBattlePlayer
+from time import time
 
 global CONFIG
 
 CONFIG_PATH = "src/config.json"
-TARGET_BATTLES = 10
+TARGET_BATTLES = 100
+CONCURRENT_BATTLES = 50
 
 async def main():
-    # TODO : investigate concurrency
+    t = time()
     players = [
         RandomRandomBattlePlayer(
             authentification_address=CONFIG["authentification_address"],
-            max_concurrent_battles=1,
+            max_concurrent_battles=CONCURRENT_BATTLES,
             mode="challenge",
             password=CONFIG["users"][0]["password"],
             server_address=CONFIG["local_adress"],
@@ -23,6 +25,7 @@ async def main():
         ),
         RandomRandomBattlePlayer(
             authentification_address=CONFIG["authentification_address"],
+            max_concurrent_battles=CONCURRENT_BATTLES,
             mode="wait",
             password=CONFIG["users"][1]["password"],
             server_address=CONFIG["local_adress"],
@@ -38,6 +41,8 @@ async def main():
 
     for el in to_await:
         await el
+
+    print(f"This took {time() - t}s to run.")
 
 
 if __name__ == "__main__":

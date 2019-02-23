@@ -3,6 +3,8 @@ import requests
 import websockets
 
 from abc import ABC, abstractmethod
+from asyncio import Lock
+from environnement.battle import Battle
 
 
 class PlayerNetwork(ABC):
@@ -30,13 +32,14 @@ class PlayerNetwork(ABC):
                 "Unspecified authentification address. Please specify an authentification address."
             )
 
+        self._authentification_address = authentification_address
         self._avatar = avatar
         self._logged_in = False
         self._password = password
         self._server_address = server_address
         self._username = username
 
-        self._authentification_address = authentification_address
+        self._lock = Lock()
 
     async def _log_in(self, conf_1: str, conf_2: str) -> None:
         """
@@ -65,6 +68,9 @@ class PlayerNetwork(ABC):
     async def accept_challenge(self, user: str) -> None:
         if self.can_accept_challenge:
             await self.send_message(f"/accept {user}")
+
+    async def leave_battle(self, battle:Battle):
+        await self.send_message("/leave", room=battle.battle_tag)
 
     async def challenge(self, player=None, format=None):
         if not self.logged_in:
@@ -128,7 +134,8 @@ class PlayerNetwork(ABC):
         else:
             to_send = "|".join([room, message])
         print(f"\n{self.username} >> {to_send}")
-        await self._websocket.send(to_send)
+        async with self._lock:
+            await self._websocket.send(to_send)
 
     @property
     @abstractmethod
