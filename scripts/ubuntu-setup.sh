@@ -15,3 +15,6 @@ cd ..
 cd showdown-battle-bot
 pip3 install -r requirement.txt
 cd ..
+
+# Updating some showdown files
+sh scripts/update-showdown.sh

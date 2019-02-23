@@ -1,0 +1,1 @@
+sudo cp showdown-corrections/* Pokemon-Showdown/server/
