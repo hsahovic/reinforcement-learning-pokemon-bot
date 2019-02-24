@@ -4,7 +4,7 @@ import websockets
 
 from abc import ABC, abstractmethod
 from asyncio import Lock
-from environnement.battle import Battle
+from environment.battle import Battle
 
 
 class PlayerNetwork(ABC):
@@ -94,7 +94,7 @@ class PlayerNetwork(ABC):
             self._websocket = websocket
             while not self.should_die:
                 message = await websocket.recv()
-                print(f"\n{self.username} << {message}")
+                # print(f"\n{self.username} << {message}")
                 await self.manage_message(message)
 
     async def manage_message(self, message: str) -> None:
@@ -133,7 +133,7 @@ class PlayerNetwork(ABC):
             to_send = "|".join([room, message, message_2])
         else:
             to_send = "|".join([room, message])
-        print(f"\n{self.username} >> {to_send}")
+        # print(f"\n{self.username} >> {to_send}")
         async with self._lock:
             await self._websocket.send(to_send)
 

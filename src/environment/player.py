@@ -4,8 +4,8 @@ import json
 from threading import Thread
 from typing import List
 
-from environnement.battle import Battle
-from environnement.player_network import PlayerNetwork
+from environment.battle import Battle
+from environment.player_network import PlayerNetwork
 
 from abc import ABC, abstractmethod
 
@@ -67,12 +67,7 @@ class Player(PlayerNetwork, ABC):
                     self.current_battles += 1
                     self.total_battles += 1
                 # TODO : get opposition team ?
-                elif battle_info[2] in self.battles:
-                    current_battle = self.battles[battle_info[2]]
-
-                else:
-                    # TODO
-                    pass
+                current_battle = self.battles[battle_info[2]]
             else:
                 # TODO
                 pass
@@ -80,13 +75,10 @@ class Player(PlayerNetwork, ABC):
             if len(split_message) <= 1:
                 continue
 
-            if split_message[-2] == "turn":
-                current_battle.set_turn(int(split_message[-1]))
-
             # Send move
             if split_message[1] == "request":
                 if split_message[2]:
-                    current_battle.update_team(json.loads(split_message[2]))
+                    current_battle.update_from_request(json.loads(split_message[2]))
                 if current_battle.is_ready:
                     await self.select_move(current_battle)
 
@@ -114,19 +106,20 @@ class Player(PlayerNetwork, ABC):
             elif split_message[1] == "win":
                 current_battle.won_by(split_message[2])
                 self.current_battles -= 1
-                self.leave_battle(current_battle)
+                await self.leave_battle(current_battle)
             else:
-                pass
+                current_battle.parse(split_message)
 
     async def run(self) -> None:
         if self.mode == "one_challenge":
-            asyncio.sleep(5)
+            while not self.logged_in:
+                asyncio.sleep(.1)
             await self.challenge()
         elif self.mode == "challenge":
             while self.total_battles < self.target_battles:
                 if self.can_accept_challenge:
                     await self.challenge(self.to_target, self.format)
-                await asyncio.sleep(0.1)
+                await asyncio.sleep(.1)
         elif self.mode == "battle_online":
             # TODO: implement
             pass

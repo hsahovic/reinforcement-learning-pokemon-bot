@@ -1,5 +1,5 @@
-from environnement.battle import Battle
-from environnement.player import Player
+from environment.battle import Battle
+from environment.player import Player
 
 from random import choice
 
@@ -32,27 +32,12 @@ class RandomRandomBattlePlayer(Player):
         )
 
     async def select_move(self, battle: Battle, *, trapped: bool = False):
-        # TODO : this is dirty and have to be rewritten, i just want to test things out for now
-        choices = []
+        choices = [f"/choose switch {i}" for i, ident in battle.available_switches] + [
+            f"/choose move {i}" for i, move in battle.available_moves
+        ]
         turn = battle.turn_sent
 
-        if "wait" in battle._player_team and battle._player_team["wait"]:
-            return
-
-        if "active" in battle._player_team:
-            if (
-                "trapped" in battle._player_team["active"][0]
-                and battle._player_team["active"][0]["trapped"]
-            ):
-                trapped = True
-            for i, move in enumerate(battle._player_team["active"][0]["moves"]):
-                if "disabled" not in move or not move["disabled"]:
-                    choices.append(f"/choose move {i + 1}")
-
-        if not trapped:
-            for i, pokemon in enumerate(battle._player_team["side"]["pokemon"]):
-                if not pokemon["active"] and pokemon["condition"] != "0 fnt":
-                    choices.append(f"/choose switch {i + 1}")
+        # TODO : mega-evolutions ?
 
         if choices:
             await self.send_message(
