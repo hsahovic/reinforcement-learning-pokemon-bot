@@ -26,23 +26,25 @@ We recommend using a Windows Linux Subsystem.
 
 ## How to run
 
-You need to have a showdown server running on localhost (`node pokemon-showdown` in the `Pokemon-Showdown` folder).
+You need to have a showdown server running on localhost (`node pokemon-showdown` in the `Pokemon-Showdown` folder). We recommend modifying it at bit to run things more quickly (try running `sh scripts/update-showdown.sh` ;) - this is actually automatically done during installation if you use our installation scripts).
 
 At this point, we are mainly building a proper OOP environnement before moving on to learning. To launch the current project, run `python3 src/main.py`.
 
-If you just want to watch two bots fighting each other, run `python3 src/old_main.py`.
-
 ## What is implemented
 
-- Base PlayerNatework class. Responsible for managing player network interaction (eg. send and receive messages to the server) with as many utilities as deemed useful
-- Base Player class. Responsible for common player mecanisms. In particular, it can challenge and receive challenges.
-- RandomRandomBattlePlayer. A player playing random battles in a random fashion. And it works !
+- Base `PlayerNatework` class. Responsible for managing player network interaction (eg. send and receive messages to the server) with as many utilities as deemed useful
+- Base `Player` class. Responsible for common player mecanisms. In particular, it can challenge and receive challenges.
+- `RandomRandomBattlePlayer`. A player playing random battles in a random fashion. And it works !
+- `Battle` class. Stores information on a battle as it goes on.
+- `Pokemon` class. Stored information on pokemons during the battle.
 
 ## Next steps
 
-- Proper battle class.
-- Proper pokemon and related classes.
-- Storing fighting data.
+- Manage all incoming information during a battle and store it properly in `Battle`.
+- Expand `Pokemon` and related classes.
+- Connect our classes to existing databases.
+- Store fighting data.
+- `import keras` hehehe
   
 Once this is done, we can start thinking about ML :)
 
