@@ -83,33 +83,60 @@ class Battle:
         self._player_role = "p2"
 
     def update_from_request(self, request: dict) -> None:
-        if "wait" in request and request["wait"]:
+        if "wait" in request and request.pop("wait"):
             self.wait = True
         else:
             self.wait = False
 
         self.available_moves = []
         self.available_switches = []
+        self.can_mega_evolve = False
+        self.can_z_move = False
         self.trapped = False
 
+        # TODO : clean exploratory prints
+
         if "active" in request:
+            active = request.pop('active')
+            assert len(active) == 1
+            active = active[0]
             if (
-                "trapped" in request["active"][0]
-                and request["active"][0]["trapped"]
+                "trapped" in active
+                and active.pop("trapped")
             ):
                 self.trapped = True
-            for i, move in enumerate(request["active"][0]["moves"]):
+            for i, move in enumerate(active.pop("moves")):
                 if "disabled" not in move or not move["disabled"]:
                     self.available_moves.append((i + 1, move))
+            if 'canMegaEvo' in active and active.pop('canMegaEvo'):
+                self.can_mega_evolve = True
+            if 'canZMove' in active:
+                self.can_z_move = active.pop('canZMove')
+            if 'maybeTrapped' in active:
+                active.pop("maybeTrapped")
+            if active:
+                print('active', active)
 
+        side = request.pop('side')
         if not self.trapped:
-            for i, pokemon in enumerate(request["side"]["pokemon"]):
+            for i, pokemon in enumerate(side["pokemon"]):
                 if not pokemon["active"] and pokemon["condition"] != "0 fnt":
                     self.available_switches.append((i + 1, pokemon['ident']))
 
-        for pokemon_info in request['side']['pokemon']:
+        for pokemon_info in side['pokemon']:
             self._player_team['ident'] = self._player_team.get(pokemon_info['ident'], Pokemon())
             self._player_team['ident'].update_from_request(pokemon_info)
+
+        request.pop('rqid')
+        if 'forceSwitch' in request:
+            request.pop('forceSwitch')
+        if 'noCancel' in request:
+            request.pop('noCancel')
+        if 'maybeTrapped' in request:
+            request.pop('maybeTrapped')
+
+        if request:
+            print('request', request)
 
         self._turn += 1
 

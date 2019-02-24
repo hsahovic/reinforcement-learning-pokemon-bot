@@ -37,9 +37,13 @@ class RandomRandomBattlePlayer(Player):
         ]
         turn = battle.turn_sent
 
-        # TODO : mega-evolutions ?
-
         if choices:
+            to_send = choice(choices)
+            if 'move' in to_send :
+                if battle.can_z_move and battle.can_z_move[int(to_send[-1])-1]:
+                    to_send += ' zmove'
+                if battle.can_mega_evolve:
+                    to_send += ' mega'
             await self.send_message(
-                message=choice(choices), message_2=str(turn), room=battle.battle_tag
+                message=to_send, message_2=str(turn), room=battle.battle_tag
             )
