@@ -10,6 +10,7 @@ CONFIG_PATH = "src/config.json"
 TARGET_BATTLES = 10
 CONCURRENT_BATTLES = 10
 
+
 async def main():
     t = time()
     players = [

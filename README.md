@@ -36,14 +36,13 @@ At this point, we are mainly building a proper OOP environnement before moving o
 - Base `Player` class. Responsible for common player mecanisms. In particular, it can challenge and receive challenges.
 - `RandomRandomBattlePlayer`. A player playing random battles in a random fashion. And it works !
 - `Battle` class. Stores information on a battle as it goes on.
-- `Pokemon` class. Stored information on pokemons during the battle.
+- `Pokemon` class. Stores information on pokemons during the battle.
 
 ## Next steps
 
-- Manage all incoming information during a battle and store it properly in `Battle`.
-- Expand `Pokemon` and related classes.
 - Connect our classes to existing databases.
 - Store fighting data.
+- Refactor random moves to use vector output converted to instructions
 - `import keras` hehehe
   
 Once this is done, we can start thinking about ML :)

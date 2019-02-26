@@ -121,7 +121,7 @@ class PlayerNetwork(ABC):
 
         elif "battle" in split_message[0]:
             await self.battle(message)
-        elif split_message[1] == 'updatesearch':
+        elif split_message[1] in ['updatesearch','popup','updateuser']:
             pass
         else:
             print(f"UNMANAGED MESSAGE : {message}")
