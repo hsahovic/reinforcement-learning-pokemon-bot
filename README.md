@@ -49,7 +49,6 @@ Once this is done, we can start thinking about ML :)
 
 ## To Do
 
-- Fix the consistency of the ident attribute for Pokemons (e.g. "mewtow", not "p1: Mewtow", nor "p1a: Mewtwo", neither "p1: Mewtwo-Z")
 - Manage form transforms in Pokemons
 
 ## Acknowledgements
