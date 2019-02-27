@@ -111,7 +111,8 @@ class Battle:
         self.wait = False
 
     def _get_pokemon_from_reference(self, message: str) -> Pokemon:
-        player, ident = message[2][:2], message[2][:2] + message[2][3:]
+        message_list = message.split(": ")
+        player, ident = message_list[0], message_list[1]
         if player == self._player_role:
             if ident not in self._player_team:
                 self._player_team[ident] = Pokemon(ident=ident)
