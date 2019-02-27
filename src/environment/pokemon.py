@@ -2,25 +2,30 @@ import json
 
 
 class Pokemon:
+    with open('data/pokedex.json') as f:
+        pokedex = json.load(f)
+    
     def __init__(self, *, ident: str = None, opponents=False) -> None:
-        self.ability = None
+        self.ident = ident
+        self.ability = Pokemon.pokedex[self.ident]["abilities"]
         self.attracted = False
         self.active = None
         self.confused = False
-        self.current_hp = None
+        self.current_hp = Pokemon.pokedex[self.ident]["baseStats"]["hp"]
         self.encored = False
         self.focused = False
         self.infested = False
         self.item = None
         self.level = None
         self.leech_seeding = False
-        self.max_hp = None
+        self.max_hp = Pokemon.pokedex[self.ident]["baseStats"]["hp"]
         self.mega = False
         self.moves = None
+        self.num = Pokemon.pokedex[self.ident]["num"]
         self.opponents = opponents
         self.perish_count = 4
         self.sex = None
-        self.species = None
+        self.species = Pokemon.pokedex[self.ident]["species"]
         self.stats = None
         self.status = {
             "tox": False,
@@ -32,10 +37,10 @@ class Pokemon:
         }
         self.substitute = False
         self.taunted = False
+        self.types = Pokemon.pokedex[self.ident]["types"]
         self.type_changed = None
         self.yawned = False
 
-        self.ident = ident
         self.reset_stat_boosts()
 
     def __repr__(self) -> str:
@@ -63,11 +68,11 @@ class Pokemon:
             self.boosts = {key: min(0, val) for key, val in self.boosts.items()}
         else:
             self.boosts = {
-                "atk": 0,
-                "spa": 0,
-                "def": 0,
-                "spd": 0,
-                "spe": 0,
+                "atk": Pokemon.pokedex[self.ident]["baseStats"]["atk"],
+                "spa": Pokemon.pokedex[self.ident]["baseStats"]["spa"],
+                "def": Pokemon.pokedex[self.ident]["baseStats"]["def"],
+                "spd": Pokemon.pokedex[self.ident]["baseStats"]["spd"],
+                "spe": Pokemon.pokedex[self.ident]["baseStats"]["spe"],
                 "accuracy": 0,
                 "evasion": 0,
             }
