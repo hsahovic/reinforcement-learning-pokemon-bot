@@ -178,9 +178,16 @@ class Battle:
         elif message[1] == "-setboost":
             pokemon = self._get_pokemon_from_reference(message[2])
             pokemon.boosts[message[3]] = int(message[4])
-        elif message[1] in ["-mega", "-primal"]:  # TODO : check primal / mega
+        elif message[1] == "-mega": 
+            complement = "x" if message[4][-1] == 'X' else ""
+            complement = "y" if message[4][-1] == 'Y' else complement
             pokemon = self._get_pokemon_from_reference(message[2])
             pokemon.mega = True
+            pokemon.set_form(mega=True, complement=complement)
+        elif message[1] == "-primal" : 
+            pokemon = self._get_pokemon_from_reference(message[2])
+            pokemon.primal = True
+            pokemon.set_form(primal=True)
         elif message[1] == "-sethp":
             self._get_pokemon_from_reference(message[2]).update_formatted_condition(
                 message[3]

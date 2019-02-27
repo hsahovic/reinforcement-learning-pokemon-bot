@@ -21,6 +21,7 @@ class PlayerNetwork(ABC):
         *,
         authentification_address: str,
         avatar: int,
+        log_messages_in_console: bool,
         server_address: str,
     ) -> None:
         """
@@ -34,6 +35,7 @@ class PlayerNetwork(ABC):
 
         self._authentification_address = authentification_address
         self._avatar = avatar
+        self._log_messages_in_console = log_messages_in_console
         self._logged_in = False
         self._password = password
         self._server_address = server_address
@@ -94,7 +96,8 @@ class PlayerNetwork(ABC):
             self._websocket = websocket
             while not self.should_die:
                 message = await websocket.recv()
-                # print(f"\n{self.username} << {message}")
+                if self._log_messages_in_console:
+                    print(f"\n{self.username} << {message}")
                 await self.manage_message(message)
 
     async def manage_message(self, message: str) -> None:
@@ -133,7 +136,8 @@ class PlayerNetwork(ABC):
             to_send = "|".join([room, message, message_2])
         else:
             to_send = "|".join([room, message])
-        # print(f"\n{self.username} >> {to_send}")
+        if self._log_messages_in_console:
+            print(f"\n{self.username} >> {to_send}")
         async with self._lock:
             await self._websocket.send(to_send)
 

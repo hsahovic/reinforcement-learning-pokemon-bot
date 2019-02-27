@@ -20,22 +20,24 @@ class Player(PlayerNetwork, ABC):
         authentification_address: str,
         avatar: int,
         format: str,
+        log_messages_in_console: bool,
         max_concurrent_battles: int,
         server_address: str,
         target_battles: int,
         to_target: str,
     ) -> None:
         super(Player, self).__init__(
-            username=username,
-            password=password,
-            server_address=server_address,
             authentification_address=authentification_address,
             avatar=avatar,
+            log_messages_in_console = log_messages_in_console,
+            password=password,
+            server_address=server_address,
+            username=username,
         )
         self.format = format
+        self.max_concurrent_battles = max_concurrent_battles
         self.mode = mode
         self.target_battles = target_battles
-        self.max_concurrent_battles = max_concurrent_battles
         self.to_target = to_target
 
         self.current_battles = 0

@@ -34,6 +34,7 @@ class Pokemon:
         self.moves = None
         self.opponents = opponents
         self.perish_count = 4
+        self.primal = False
         self.sex = None
         self.stats = None
         self.status = {
@@ -51,8 +52,8 @@ class Pokemon:
         self.yawned = False
 
         self.ident = ident
-        self.num = POKEDEX[self.species]["num"]
         self.reset_stat_boosts()
+        self.set_form(self.species)
 
     def __repr__(self) -> str:
         return f"Pokemon object: {self.species} ({self.current_hp}/{self.max_hp})"
@@ -72,7 +73,9 @@ class Pokemon:
     def boost(self, stat: str, value: int) -> None:
         self.boosts[stat] += value
 
-    def reset_stat_boosts(self, clear_neg=False, clear_pos=False) -> None:
+    def reset_stat_boosts(
+        self, clear_neg: bool = False, clear_pos: bool = False
+    ) -> None:
         if clear_neg:
             self.boosts = {key: max(0, val) for key, val in self.boosts.items()}
         elif clear_pos:
@@ -89,11 +92,32 @@ class Pokemon:
                 "evasion": 0,
             }
 
-    def set_form(self, form: str) -> None:
-        # TODO : manage form transformations
-        pass
+    def set_form(
+        self,
+        form: str = None,
+        *,
+        mega: bool = False,
+        primal: bool = False,
+        complement: str = "",
+    ) -> None:
+        if mega:
+            form = self.species.lower() + "mega" + complement
+        elif primal:
+            form = self.species.lower() + "primal"
+        else:
+            form = "".join(
+                [
+                    char
+                    for char in form.lower()
+                    if char in "abcdefghijklmnopqrstuvwxyz0123456789"
+                ]
+            )
+        self.ability = POKEDEX[form]["abilities"]
+        self.base_stats = POKEDEX[form]["baseStats"]
+        self.types = POKEDEX[form]["types"]
+        self.num = POKEDEX[form]["num"]
 
-    def set_status(self, status: str, cure=False) -> None:
+    def set_status(self, status: str, cure: bool = False) -> None:
         if status not in self.status:
             # TODO : at some point, get rid of this
             print(f"UNKNOWN STATUS {status}")
