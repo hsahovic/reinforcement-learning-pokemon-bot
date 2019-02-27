@@ -113,13 +113,13 @@ class Player(PlayerNetwork, ABC):
     async def run(self) -> None:
         if self.mode == "one_challenge":
             while not self.logged_in:
-                asyncio.sleep(.1)
+                asyncio.sleep(0.1)
             await self.challenge()
         elif self.mode == "challenge":
             while self.total_battles < self.target_battles:
                 if self.can_accept_challenge:
                     await self.challenge(self.to_target, self.format)
-                await asyncio.sleep(.1)
+                await asyncio.sleep(0.01)
         elif self.mode == "battle_online":
             # TODO: implement
             pass

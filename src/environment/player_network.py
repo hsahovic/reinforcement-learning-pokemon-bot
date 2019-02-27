@@ -69,7 +69,7 @@ class PlayerNetwork(ABC):
         if self.can_accept_challenge:
             await self.send_message(f"/accept {user}")
 
-    async def leave_battle(self, battle:Battle):
+    async def leave_battle(self, battle: Battle):
         await self.send_message("/leave", room=battle.battle_tag)
 
     async def challenge(self, player=None, format=None):
@@ -121,7 +121,7 @@ class PlayerNetwork(ABC):
 
         elif "battle" in split_message[0]:
             await self.battle(message)
-        elif split_message[1] in ['updatesearch','popup','updateuser']:
+        elif split_message[1] in ["updatesearch", "popup", "updateuser"]:
             pass
         else:
             print(f"UNMANAGED MESSAGE : {message}")

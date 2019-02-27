@@ -33,7 +33,7 @@ class Battle:
         "-singleturn",  # TODO : check single turn possibilities
         "-supereffective",
         "-transform",
-        "-zbroken", # TODO : what is this ?
+        "-zbroken",  # TODO : what is this ?
         "-zpower",  # TODO : item assignment ?
         "callback",  # TODO
         "cant",
@@ -111,8 +111,10 @@ class Battle:
         self.wait = False
 
     def _get_pokemon_from_reference(self, message: str) -> Pokemon:
-        message_list = message.split(": ")
-        player, ident = message_list[0], message_list[1]
+        # TODO : check that this actually works
+        # message_list = message.split(": ")
+        # player, ident = message_list[0], message_list[1]
+        player, ident = message[:2], message.split(": ")[-1]
         if player == self._player_role:
             if ident not in self._player_team:
                 self._player_team[ident] = Pokemon(ident=ident)

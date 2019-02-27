@@ -1,33 +1,40 @@
 import json
 
+global POKEDEX
+
+with open("data/pokedex.json") as f:
+    POKEDEX = json.load(f)
+
 
 class Pokemon:
-    with open('data/pokedex.json') as f:
-        pokedex = json.load(f)
-    
     def __init__(self, *, ident: str = None, opponents=False) -> None:
-        
-        self.ident = ident
-        self.id = ident.split(": ")[-1].lower().split("-")[0] # Identity without player number
-        self.ability = Pokemon.pokedex[self.id]["abilities"]
+        self.species = "".join(
+            [
+                char
+                for char in ident.split(": ")[-1].lower()
+                if char in "abcdefghijklmnopqrstuvwxyz0123456789"
+            ]
+        )
+
+        # self.id = ident.split(": ")[-1].lower().split("-")[0] # Identity without player number
+        self.ability = POKEDEX[self.species]["abilities"]
         self.attracted = False
         self.active = None
+        self.base_stats = POKEDEX[self.species]["baseStats"]
         self.confused = False
-        self.current_hp = Pokemon.pokedex[self.id]["baseStats"]["hp"]
+        self.current_hp = None
         self.encored = False
         self.focused = False
         self.infested = False
         self.item = None
         self.level = None
         self.leech_seeding = False
-        self.max_hp = Pokemon.pokedex[self.id]["baseStats"]["hp"]
+        self.max_hp = None
         self.mega = False
         self.moves = None
-        self.num = Pokemon.pokedex[self.id]["num"]
         self.opponents = opponents
         self.perish_count = 4
         self.sex = None
-        self.species = Pokemon.pokedex[self.id]["species"]
         self.stats = None
         self.status = {
             "tox": False,
@@ -39,10 +46,12 @@ class Pokemon:
         }
         self.substitute = False
         self.taunted = False
-        self.types = Pokemon.pokedex[self.id]["types"]
+        self.types = POKEDEX[self.species]["types"]
         self.type_changed = None
         self.yawned = False
 
+        self.ident = ident
+        self.num = POKEDEX[self.species]["num"]
         self.reset_stat_boosts()
 
     def __repr__(self) -> str:
@@ -70,11 +79,12 @@ class Pokemon:
             self.boosts = {key: min(0, val) for key, val in self.boosts.items()}
         else:
             self.boosts = {
-                "atk": Pokemon.pokedex[self.id]["baseStats"]["atk"],
-                "spa": Pokemon.pokedex[self.id]["baseStats"]["spa"],
-                "def": Pokemon.pokedex[self.id]["baseStats"]["def"],
-                "spd": Pokemon.pokedex[self.id]["baseStats"]["spd"],
-                "spe": Pokemon.pokedex[self.id]["baseStats"]["spe"],
+                "atk": 0,
+                "spa": 0,
+                "def": 0,
+                "spd": 0,
+                "spe": 0,
+                "fnt": 0,
                 "accuracy": 0,
                 "evasion": 0,
             }
@@ -95,7 +105,7 @@ class Pokemon:
     def update_formatted_condition(self, condition: str) -> None:
         if condition == "0 fnt":
             # TODO : switch to enum ?
-            self.status = "fnt"
+            self.status["fnt"] = True
             self.current_hp = 0
         else:
             if condition[-1] not in "1234567890":
