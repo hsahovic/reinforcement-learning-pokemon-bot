@@ -35,7 +35,7 @@ class Battle:
         "-transform",
         "-zbroken",  # TODO : what is this ?
         "-zpower",  # TODO : item assignment ?
-        "callback", 
+        "callback",
         "cant",
         "deinit",
         "detailschange",
@@ -166,7 +166,7 @@ class Battle:
             pokemon.update_from_move(message[3])
         elif message[1] == "faint":
             pokemon = self._get_pokemon_from_reference(message[2])
-            pokemon.set_status('fnt')
+            pokemon.set_status("fnt")
         elif message[1] == "-clearboost":
             pokemon = self._get_pokemon_from_reference(message[2])
             pokemon.reset_stat_boosts()
@@ -182,13 +182,13 @@ class Battle:
         elif message[1] == "-setboost":
             pokemon = self._get_pokemon_from_reference(message[2])
             pokemon.boosts[message[3]] = int(message[4])
-        elif message[1] == "-mega": 
-            complement = "x" if message[4][-1] == 'X' else ""
-            complement = "y" if message[4][-1] == 'Y' else complement
+        elif message[1] == "-mega":
+            complement = "x" if message[4][-1] == "X" else ""
+            complement = "y" if message[4][-1] == "Y" else complement
             pokemon = self._get_pokemon_from_reference(message[2])
             pokemon.mega = True
             pokemon.set_form(mega=True, complement=complement)
-        elif message[1] == "-primal" : 
+        elif message[1] == "-primal":
             pokemon = self._get_pokemon_from_reference(message[2])
             pokemon.primal = True
             pokemon.set_form(primal=True)

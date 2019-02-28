@@ -1,11 +1,5 @@
-import json
-
 from environment.move import Move, ZMoveException
-
-global POKEDEX
-
-with open("data/pokedex.json") as f:
-    POKEDEX = json.load(f)
+from environment.utils import POKEDEX, TYPES
 
 
 class Pokemon:
@@ -136,7 +130,7 @@ class Pokemon:
                 condition = condition[:-4]
             self.current_hp, self.max_hp = [int(el) for el in condition.split("/")]
 
-    def update_from_move(self, move:str)-> None:
+    def update_from_move(self, move: str) -> None:
         move = move.lower()
         if move not in self.moves:
             try:
