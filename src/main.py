@@ -1,14 +1,14 @@
 import asyncio
 import json
 
-from environment.players.random_random_battle import RandomRandomBattlePlayer
+from players.random_random_battle import RandomRandomBattlePlayer
 from time import time
 
 global CONFIG
 
 CONFIG_PATH = "src/config.json"
-TARGET_BATTLES = 100
-CONCURRENT_BATTLES = 1
+TARGET_BATTLES = 10
+CONCURRENT_BATTLES = 10
 
 
 async def main():

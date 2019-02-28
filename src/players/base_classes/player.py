@@ -5,7 +5,7 @@ from threading import Thread
 from typing import List
 
 from environment.battle import Battle
-from environment.player_network import PlayerNetwork
+from players.base_classes.player_network import PlayerNetwork
 
 from abc import ABC, abstractmethod
 

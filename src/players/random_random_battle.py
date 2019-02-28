@@ -1,5 +1,5 @@
 from environment.battle import Battle
-from environment.player import Player
+from players.base_classes.player import Player
 
 from random import choice
 
