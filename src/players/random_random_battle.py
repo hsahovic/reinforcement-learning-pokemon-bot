@@ -1,8 +1,6 @@
 from environment.battle import Battle
 from players.base_classes.player import Player
 
-from random import choice
-
 
 class RandomRandomBattlePlayer(Player):
     def __init__(
@@ -34,18 +32,4 @@ class RandomRandomBattlePlayer(Player):
         )
 
     async def select_move(self, battle: Battle, *, trapped: bool = False):
-        choices = [f"/choose switch {i}" for i, ident in battle.available_switches] + [
-            f"/choose move {i}" for i, move in battle.available_moves
-        ]
-        turn = battle.turn_sent
-
-        if choices:
-            to_send = choice(choices)
-            if "move" in to_send:
-                if battle.can_z_move and battle.can_z_move[int(to_send[-1]) - 1]:
-                    to_send += " zmove"
-                if battle.can_mega_evolve:
-                    to_send += " mega"
-            await self.send_message(
-                message=to_send, message_2=str(turn), room=battle.battle_tag
-            )
+        await self.random_move(battle=battle, trapped=trapped)

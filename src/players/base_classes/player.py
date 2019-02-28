@@ -1,13 +1,13 @@
 import asyncio
 import json
 
+from abc import ABC, abstractmethod
+from random import choice
 from threading import Thread
 from typing import List
 
 from environment.battle import Battle
 from players.base_classes.player_network import PlayerNetwork
-
-from abc import ABC, abstractmethod
 
 
 class Player(PlayerNetwork, ABC):
@@ -29,7 +29,7 @@ class Player(PlayerNetwork, ABC):
         super(Player, self).__init__(
             authentification_address=authentification_address,
             avatar=avatar,
-            log_messages_in_console = log_messages_in_console,
+            log_messages_in_console=log_messages_in_console,
             password=password,
             server_address=server_address,
             username=username,
@@ -88,7 +88,9 @@ class Player(PlayerNetwork, ABC):
                 await self.select_move(current_battle, trapped=True)
 
             elif split_message[1] == "error":
-                if split_message[2].startswith("[Invalid choice] There's nothing to choose"):
+                if split_message[2].startswith(
+                    "[Invalid choice] There's nothing to choose"
+                ):
                     pass
                 elif split_message[2].startswith("[Invalid choice] Can't do anything"):
                     pass
@@ -120,6 +122,23 @@ class Player(PlayerNetwork, ABC):
                 await self.leave_battle(current_battle)
             else:
                 current_battle.parse(split_message)
+
+    async def random_move(self, battle: Battle, *, trapped: bool = False) -> None:
+        choices = [f"/choose switch {i}" for i, ident in battle.available_switches] + [
+            f"/choose move {i}" for i, move in battle.available_moves
+        ]
+        turn = battle.turn_sent
+
+        if choices:
+            to_send = choice(choices)
+            if "move" in to_send:
+                if battle.can_z_move and battle.can_z_move[int(to_send[-1]) - 1]:
+                    to_send += " zmove"
+                if battle.can_mega_evolve:
+                    to_send += " mega"
+            await self.send_message(
+                message=to_send, message_2=str(turn), room=battle.battle_tag
+            )
 
     async def run(self) -> None:
         if self.mode == "one_challenge":
