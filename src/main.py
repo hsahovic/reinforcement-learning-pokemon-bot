@@ -7,8 +7,8 @@ from time import time
 global CONFIG
 
 CONFIG_PATH = "src/config.json"
-TARGET_BATTLES = 10
-CONCURRENT_BATTLES = 10
+TARGET_BATTLES = 1000
+CONCURRENT_BATTLES = 100
 
 
 async def main():

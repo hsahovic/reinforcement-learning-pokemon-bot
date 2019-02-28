@@ -25,7 +25,7 @@ class Battle:
         "-immune",
         "-item",
         "-message",
-        # "-miss",  # TODO : check misses
+        "-miss",
         "-mustrecharge",
         "-prepare",  # TODO : switch to an actual boolean somewhere, this needs to be used properly
         "-resisted",
@@ -35,8 +35,8 @@ class Battle:
         "-transform",
         "-zbroken",  # TODO : what is this ?
         "-zpower",  # TODO : item assignment ?
-        # "callback",  # TODO
-        # "cant",
+        "callback", 
+        "cant",
         "deinit",
         "detailschange",
         "drag",
@@ -44,7 +44,6 @@ class Battle:
         "init",
         "j",
         "l",
-        # "move",
         "player",
         "rule",
         "seed",

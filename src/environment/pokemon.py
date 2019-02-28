@@ -1,6 +1,6 @@
 import json
 
-from environment.move import Move
+from environment.move import Move, ZMoveException
 
 global POKEDEX
 
@@ -139,7 +139,10 @@ class Pokemon:
     def update_from_move(self, move:str)-> None:
         move = move.lower()
         if move not in self.moves:
-            self.moves[move] = Move(move)
+            try:
+                self.moves[move] = Move(move)
+            except ZMoveException:
+                pass
 
     def update_from_request(self, request: dict) -> None:
         assert self.ident == request.pop("ident")
