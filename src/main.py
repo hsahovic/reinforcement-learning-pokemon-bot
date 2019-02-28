@@ -2,19 +2,18 @@ import asyncio
 import json
 
 from players.random_random_battle import RandomRandomBattlePlayer
+from players.ml_random_battle import MLRandomBattlePlayer
+from environment.utils import CONFIG
 from time import time
 
-global CONFIG
-
-CONFIG_PATH = "src/config.json"
 TARGET_BATTLES = 10
-CONCURRENT_BATTLES = 10
+CONCURRENT_BATTLES = 1
 
 
 async def main():
     t = time()
     players = [
-        RandomRandomBattlePlayer(
+        MLRandomBattlePlayer(
             authentification_address=CONFIG["authentification_address"],
             max_concurrent_battles=CONCURRENT_BATTLES,
             log_messages_in_console=False,
@@ -25,7 +24,7 @@ async def main():
             to_target=CONFIG["users"][1]["username"],
             username=CONFIG["users"][0]["username"],
         ),
-        RandomRandomBattlePlayer(
+        MLRandomBattlePlayer(
             authentification_address=CONFIG["authentification_address"],
             log_messages_in_console=False,
             max_concurrent_battles=CONCURRENT_BATTLES,
@@ -50,6 +49,4 @@ async def main():
 
 if __name__ == "__main__":
     print(f"\n{'='*30} STARTING {'='*30}\n")
-    with open(CONFIG_PATH) as f:
-        CONFIG = json.load(f)
     asyncio.get_event_loop().run_until_complete(main())

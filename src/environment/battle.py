@@ -1,4 +1,5 @@
-from environment.pokemon import Pokemon
+from environment.pokemon import empty_pokemon, Pokemon
+from pprint import pprint
 from typing import List, Tuple
 
 
@@ -278,9 +279,7 @@ class Battle:
         # TODO : clean exploratory prints
 
         if "active" in request:
-            active = request["active"]
-            assert len(active) == 1
-            active = active[0]
+            active = request["active"][0]
             if "trapped" in active and active["trapped"]:
                 self.trapped = True
             for i, move in enumerate(active["moves"]):
@@ -293,7 +292,8 @@ class Battle:
             if "maybeTrapped" in active:
                 active["maybeTrapped"]
             if "canUltraBurst" in active:
-                active["canUltraBurst"]  # TODO : check this
+                pass
+                # active["canUltraBurst"]  # TODO : check this
 
         side = request["side"]
         if not self.trapped:
@@ -334,3 +334,47 @@ class Battle:
     @property
     def turn_sent(self) -> int:
         return self._turn * 2 + (1 if self._player_role == "p2" else 0)
+
+    @property
+    def dic_state(self) -> dict:
+        active = [
+            pokemon.dic_state
+            for pokemon in self._player_team.values()
+            if pokemon.active
+        ]
+        opp_active = [
+            pokemon.dic_state
+            for pokemon in self._opponent_team.values()
+            if pokemon.active
+        ]
+        back = [
+            pokemon.dic_state
+            for pokemon in self._player_team.values()
+            if not pokemon.active
+        ]
+        opp_back = [
+            pokemon.dic_state
+            for pokemon in self._opponent_team.values()
+            if not pokemon.active
+        ]
+
+        if not active:
+            active = empty_pokemon
+        if not opp_active:
+            opp_active = empty_pokemon
+        while len(back) < 5:
+            back.append(empty_pokemon)
+        while len(opp_back) < 5:
+            opp_back.append(empty_pokemon)
+
+        return {
+            "active": active,
+            "opp_active": opp_active,
+            "back": back,
+            "opp_back": opp_back,
+            "weather": {weather: self._weather == weather for weather in self.WEATHERS},
+            "field": self.p1_fields if self._player_role == "p1" else self.p2_fields,
+            "opp_field": self.p2_fields
+            if self._player_role == "p1"
+            else self.p1_fields,
+        }
