@@ -25,7 +25,7 @@ class Battle:
         "-immune",
         "-item",
         "-message",
-        "-miss",  # TODO : check misses
+        # "-miss",  # TODO : check misses
         "-mustrecharge",
         "-prepare",  # TODO : switch to an actual boolean somewhere, this needs to be used properly
         "-resisted",
@@ -35,17 +35,16 @@ class Battle:
         "-transform",
         "-zbroken",  # TODO : what is this ?
         "-zpower",  # TODO : item assignment ?
-        "callback",  # TODO
-        "cant",
+        # "callback",  # TODO
+        # "cant",
         "deinit",
         "detailschange",
         "drag",
-        "faint",
         "gen",
         "init",
         "j",
         "l",
-        "move",
+        # "move",
         "player",
         "rule",
         "seed",
@@ -163,6 +162,12 @@ class Battle:
                 pokemon.reset_stat_boosts()
             for pokemon in self._player_team.values():
                 pokemon.reset_stat_boosts()
+        elif message[1] == "move":
+            pokemon = self._get_pokemon_from_reference(message[2])
+            pokemon.update_from_move(message[3])
+        elif message[1] == "faint":
+            pokemon = self._get_pokemon_from_reference(message[2])
+            pokemon.set_status('fnt')
         elif message[1] == "-clearboost":
             pokemon = self._get_pokemon_from_reference(message[2])
             pokemon.reset_stat_boosts()

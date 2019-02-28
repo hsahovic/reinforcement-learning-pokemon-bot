@@ -1,5 +1,7 @@
 import json
 
+from environment.move import Move
+
 global POKEDEX
 
 with open("data/pokedex.json") as f:
@@ -16,7 +18,6 @@ class Pokemon:
             ]
         )
 
-        # self.id = ident.split(": ")[-1].lower().split("-")[0] # Identity without player number
         self.ability = POKEDEX[self.species]["abilities"]
         self.attracted = False
         self.active = None
@@ -31,7 +32,7 @@ class Pokemon:
         self.leech_seeding = False
         self.max_hp = None
         self.mega = False
-        self.moves = None
+        self.moves = {}
         self.opponents = opponents
         self.perish_count = 4
         self.primal = False
@@ -44,9 +45,11 @@ class Pokemon:
             "par": False,
             "brn": False,
             "frz": False,
+            "fnt": False,
         }
         self.substitute = False
         self.taunted = False
+        # TODO
         self.types = POKEDEX[self.species]["types"]
         self.type_changed = None
         self.yawned = False
@@ -118,9 +121,6 @@ class Pokemon:
         self.num = POKEDEX[form]["num"]
 
     def set_status(self, status: str, cure: bool = False) -> None:
-        if status not in self.status:
-            # TODO : at some point, get rid of this
-            print(f"UNKNOWN STATUS {status}")
         if cure:
             self.status[status] = False
         else:
@@ -128,7 +128,6 @@ class Pokemon:
 
     def update_formatted_condition(self, condition: str) -> None:
         if condition == "0 fnt":
-            # TODO : switch to enum ?
             self.status["fnt"] = True
             self.current_hp = 0
         else:
@@ -136,6 +135,11 @@ class Pokemon:
                 self.status[condition[-3:]] = True
                 condition = condition[:-4]
             self.current_hp, self.max_hp = [int(el) for el in condition.split("/")]
+
+    def update_from_move(self, move:str)-> None:
+        move = move.lower()
+        if move not in self.moves:
+            self.moves[move] = Move(move)
 
     def update_from_request(self, request: dict) -> None:
         assert self.ident == request.pop("ident")
@@ -148,14 +152,15 @@ class Pokemon:
         self.active = request.pop("active")
         self.focused = False
         self.item = request.pop("item")
-        self.moves = request.pop("moves")
+        for move in request.pop("moves"):
+            self.update_from_move(move)
         self.stats = request.pop("stats")
 
         request.pop("pokeball")
         request.pop("ability")
 
         if request:
-            print(request)
+            print("request", request)
 
     def update_from_switch(self, message: str) -> None:
         self.update_formatted_condition(message[-1])
