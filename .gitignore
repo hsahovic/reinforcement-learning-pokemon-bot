@@ -5,3 +5,6 @@ src/base_code/__pycache__/io_process.cpython-36.pyc
 src/base_code/__pycache__/login.cpython-36.pyc
 src/base_code/__pycache__/io_process.cpython-36.pyc
 .vscode/*
+out.txt
+log.txt
+profile.*
