@@ -123,9 +123,6 @@ class Battle:
             return self._opponent_team[ident]
 
     def parse(self, message: List[str]) -> None:
-
-        # TODO : clean the debugs
-
         if message[1] in self.ACTIONS_TO_IGNORE:
             return
         elif message[1] == "switch":
@@ -267,7 +264,7 @@ class Battle:
         self._player_role = "p2"
 
     def update_from_request(self, request: dict) -> None:
-        if "wait" in request and request.pop("wait"):
+        if "wait" in request and request["wait"]:
             self.wait = True
         else:
             self.wait = False
@@ -281,26 +278,24 @@ class Battle:
         # TODO : clean exploratory prints
 
         if "active" in request:
-            active = request.pop("active")
+            active = request["active"]
             assert len(active) == 1
             active = active[0]
-            if "trapped" in active and active.pop("trapped"):
+            if "trapped" in active and active["trapped"]:
                 self.trapped = True
-            for i, move in enumerate(active.pop("moves")):
+            for i, move in enumerate(active["moves"]):
                 if "disabled" not in move or not move["disabled"]:
                     self.available_moves.append((i + 1, move))
-            if "canMegaEvo" in active and active.pop("canMegaEvo"):
+            if "canMegaEvo" in active and active["canMegaEvo"]:
                 self.can_mega_evolve = True
             if "canZMove" in active:
-                self.can_z_move = active.pop("canZMove")
+                self.can_z_move = active["canZMove"]
             if "maybeTrapped" in active:
-                active.pop("maybeTrapped")
+                active["maybeTrapped"]
             if "canUltraBurst" in active:
-                active.pop("canUltraBurst")  # TODO : check this
-            if active:
-                print("active", active)
+                active["canUltraBurst"]  # TODO : check this
 
-        side = request.pop("side")
+        side = request["side"]
         if not self.trapped:
             for i, pokemon in enumerate(side["pokemon"]):
                 if not pokemon["active"] and pokemon["condition"] != "0 fnt":
@@ -313,16 +308,13 @@ class Battle:
                 )
             self._player_team[pokemon_info["ident"]].update_from_request(pokemon_info)
 
-        request.pop("rqid")
+        request["rqid"]
         if "forceSwitch" in request:
-            request.pop("forceSwitch")
+            request["forceSwitch"]
         if "noCancel" in request:
-            request.pop("noCancel")
+            request["noCancel"]
         if "maybeTrapped" in request:
-            request.pop("maybeTrapped")
-
-        if request:
-            print("request", request)
+            request["maybeTrapped"]
 
         self._turn += 1
 

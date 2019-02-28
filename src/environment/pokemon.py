@@ -139,25 +139,16 @@ class Pokemon:
                 pass
 
     def update_from_request(self, request: dict) -> None:
-        assert self.ident == request.pop("ident")
+        self._update_formatted_details(request["details"])
+        self.update_formatted_condition(request["condition"])
 
-        self._update_formatted_details(request.pop("details"))
-        self.update_formatted_condition(request.pop("condition"))
-
-        self.ability = request.pop("baseAbility")
-        self.attracted = False
-        self.active = request.pop("active")
+        self.ability = request["baseAbility"]
+        self.active = request["active"]
         self.focused = False
-        self.item = request.pop("item")
-        for move in request.pop("moves"):
+        self.item = request["item"]
+        for move in request["moves"]:
             self.update_from_move(move)
-        self.stats = request.pop("stats")
-
-        request.pop("pokeball")
-        request.pop("ability")
-
-        if request:
-            print("request", request)
+        self.stats = request["stats"]
 
     def update_from_switch(self, message: str) -> None:
         self.update_formatted_condition(message[-1])
@@ -166,6 +157,7 @@ class Pokemon:
         self.reset_stat_boosts()
 
         self.active = True
+        self.attracted = False
         self.confused = False
         self.encored = False
         self.infested = False

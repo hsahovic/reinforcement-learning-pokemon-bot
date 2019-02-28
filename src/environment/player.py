@@ -88,7 +88,16 @@ class Player(PlayerNetwork, ABC):
                 await self.select_move(current_battle, trapped=True)
 
             elif split_message[1] == "error":
-                if split_message[2].startswith("[Invalid choice]"):
+                if split_message[2].startswith("[Invalid choice] There's nothing to choose"):
+                    pass
+                elif split_message[2].startswith("[Invalid choice] Can't do anything"):
+                    pass
+                elif split_message[2].startswith("[Invalid choice] Sorry, too late"):
+                    pass
+                elif split_message[2].startswith("[Invalid choice] Can't switch"):
+                    current_battle.trapped = True
+                    await self.select_move(current_battle)
+                elif split_message[2].startswith("[Invalid choice]"):
                     await self.select_move(current_battle)
 
             # Update player id and turn count

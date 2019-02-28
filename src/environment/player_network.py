@@ -122,7 +122,7 @@ class PlayerNetwork(ABC):
                     if self.current_battles < self.target_battles:
                         await self.accept_challenge(user)
 
-        elif "battle" in split_message[0]:
+        elif split_message[0].startswith('>battle'):
             await self.battle(message)
         elif split_message[1] in ["updatesearch", "popup", "updateuser"]:
             pass

@@ -8,7 +8,7 @@ global CONFIG
 
 CONFIG_PATH = "src/config.json"
 TARGET_BATTLES = 100
-CONCURRENT_BATTLES = 100
+CONCURRENT_BATTLES = 1
 
 
 async def main():
