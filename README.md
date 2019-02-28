@@ -32,24 +32,31 @@ At this point, we are mainly building a proper OOP environnement before moving o
 
 ## What is implemented
 
+### Base player classes
+
 - Base `PlayerNatework` class. Responsible for managing player network interaction (eg. send and receive messages to the server) with as many utilities as deemed useful
 - Base `Player` class. Responsible for common player mecanisms. In particular, it can challenge and receive challenges.
-- `RandomRandomBattlePlayer`. A player playing random battles in a random fashion. And it works !
+
+### Environment
+
 - `Battle` class. Stores information on a battle as it goes on.
 - `Pokemon` class. Stores information on pokemons during the battle.
+- `Move` class. Stores information on moves.
+
+**This work is considered as good enough** ; there is a lot of things to be done and extended, but the current focus of the project is on implementing a first working battling AI based on the current environment. In particular, please **do not change the API** or the dict returned by **dic_state** without discussing it extensively beforehand.
+
+This is valid until we create a first working bot. The only exception to this rule regards *battle parsing and callbacks*.
+
+### Players
+
+- `RandomRandomBattlePlayer`. A player playing random battles in a random fashion. And it works !
+- `MLRandomBattlePlayer`. Right now, it does not do anything particular. 
+
 
 ## Next steps
 
-- Connect our classes to existing databases.
-- Store fighting data.
-- Refactor random moves to use vector output converted to instructions
-- `import keras` hehehe
-  
-Once this is done, we can start thinking about ML :)
-
-## To Do
-
-- Manage form transforms in Pokemons
+- Set up a proper ML envrionnement with easy-to-use data storage and fetching features.
+- IT'S TIME TO MACHINE LEARN, BABY !  
 
 ## Acknowledgements
 
