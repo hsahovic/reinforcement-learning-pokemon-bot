@@ -4,28 +4,36 @@ from environment.utils import CATEGORIES, MOVES, TARGETS, TYPES, SECONDARIES
 empty_move = {
     "accuracy": 0,
     "auto_boosts": {
-        "tox": (0, 0),
+        "atk": (0, 0),
+        "brn": (0, 0),
+        "def": (0, 0),
+        "frz": (0, 0),
+        "par": (0, 0),
         "psn": (0, 0),
         "slp": (0, 0),
-        "par": (0, 0),
-        "brn": (0, 0),
-        "frz": (0, 0),
+        "spa": (0, 0),
+        "spd": (0, 0),
+        "spe": (0, 0),
+        "tox": (0, 0),
     },
     "base_power": 0,
     "boosts": {
-        "tox": (0, 0),
+        "atk": (0, 0),
+        "brn": (0, 0),
+        "def": (0, 0),
+        "frz": (0, 0),
+        "par": (0, 0),
         "psn": (0, 0),
         "slp": (0, 0),
-        "par": (0, 0),
-        "brn": (0, 0),
-        "frz": (0, 0),
+        "spa": (0, 0),
+        "spd": (0, 0),
+        "spe": (0, 0),
+        "tox": (0, 0),
     },
     "category": {category: False for category in CATEGORIES},
     "exists": 0,
     "max_pp": 0,
     "priority": 0,
-    "target": {target: False for target in TARGETS},
-    "type": {type_: False for type_ in TYPES},
     "secondaries": {
         "par": 0,
         "brn": 0,
@@ -35,6 +43,8 @@ empty_move = {
         "flinch": 0,
         "confusion": 0,
     },
+    "target": {target: False for target in TARGETS},
+    "type": {type_: False for type_ in TYPES},
     "z_boost": {
         "atk": 0,
         "spa": 0,
@@ -81,6 +91,11 @@ class Move:
             "par": (0, 0),
             "brn": (0, 0),
             "frz": (0, 0),
+            "atk": (0, 0),
+            "spa": (0, 0),
+            "def": (0, 0),
+            "spd": (0, 0),
+            "spe": (0, 0),
         }
         self.auto_boosts = {
             "tox": (0, 0),
@@ -89,6 +104,11 @@ class Move:
             "par": (0, 0),
             "brn": (0, 0),
             "frz": (0, 0),
+            "atk": (0, 0),
+            "spa": (0, 0),
+            "def": (0, 0),
+            "spd": (0, 0),
+            "spe": (0, 0),
         }
 
         self.secondaries = {
@@ -148,6 +168,8 @@ class Move:
         self.name
         if "boosts" in effect:
             for stat, val in effect["boosts"].items():
+                if stat not in self.boosts:
+                    print("stat in boost", stat)
                 self.boosts[stat] = (val, effect["chance"])
         elif "status" in effect:
             if effect["status"] not in SECONDARIES:
@@ -162,6 +184,8 @@ class Move:
         elif "self" in effect:
             if "boosts" in effect["self"]:
                 for stat, val in effect["self"]["boosts"].items():
+                    if stat not in self.auto_boosts:
+                        print("stat in auto boost", stat)
                     self.auto_boosts[stat] = (val, effect["chance"])
             else:
                 print("effect self", effect)

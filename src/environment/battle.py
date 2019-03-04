@@ -53,7 +53,6 @@ class Battle:
         "replace",
         "tier",
         "title",
-        "turn",
         "upkeep",
     ]
 
@@ -114,7 +113,7 @@ class Battle:
         # message_list = message.split(": ")
         # player, ident = message_list[0], message_list[1]
         player, ident = message[:2], message.split(": ")[-1]
-        if player == self._player_role:
+        if (player == self._player_role) or (self._player_role is None): # this is a hack ; apparently it happens on battle init. This needs to be looked into.
             if ident not in self._player_team:
                 self._player_team[ident] = Pokemon(ident=ident)
             return self._player_team[ident]
@@ -127,7 +126,7 @@ class Battle:
         if message[1] in self.ACTIONS_TO_IGNORE:
             return
         elif message[1] == "switch":
-            if message[0:2] == self._player_role:
+            if message[2][0:2] == self._player_role:
                 for pokemon in self._player_team.values():
                     pokemon.active = False
             else:
@@ -184,11 +183,9 @@ class Battle:
             complement = "x" if message[4][-1] == "X" else ""
             complement = "y" if message[4][-1] == "Y" else complement
             pokemon = self._get_pokemon_from_reference(message[2])
-            pokemon.mega = True
             pokemon.set_form(mega=True, complement=complement)
         elif message[1] == "-primal":
             pokemon = self._get_pokemon_from_reference(message[2])
-            pokemon.primal = True
             pokemon.set_form(primal=True)
         elif message[1] == "-sethp":
             self._get_pokemon_from_reference(message[2]).update_formatted_condition(
@@ -302,11 +299,8 @@ class Battle:
                     self.available_switches.append((i + 1, pokemon["ident"]))
 
         for pokemon_info in side["pokemon"]:
-            if pokemon_info["ident"] not in self._player_team:
-                self._player_team[pokemon_info["ident"]] = Pokemon(
-                    ident=pokemon_info["ident"]
-                )
-            self._player_team[pokemon_info["ident"]].update_from_request(pokemon_info)
+            pokemon = self._get_pokemon_from_reference(pokemon_info["ident"])
+            pokemon.update_from_request(pokemon_info)
 
         request["rqid"]
         if "forceSwitch" in request:
@@ -360,8 +354,12 @@ class Battle:
 
         if not active:
             active = empty_pokemon
+        else:
+            active = active[0]
         if not opp_active:
             opp_active = empty_pokemon
+        else:
+            opp_active = opp_active[0]
         while len(back) < 5:
             back.append(empty_pokemon)
         while len(opp_back) < 5:

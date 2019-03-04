@@ -1,39 +1,39 @@
 from environment.move import empty_move, Move, ZMoveException
-from environment.utils import POKEDEX, TYPES
+from environment.utils import MOVES, POKEDEX, TYPES, SEXES
 
 
 empty_pokemon = {
-            "active": False,
-            "attracted": False,
-            "base_stats": {"hp": 0, "atk": 0, "def": 0, "spa": 0, "spd": 0, "spe": 0},
-            "current_hp": 0,
-            "encored": False,
-            "exists": False,
-            "focused": False,
-            "infested": False,
-            "level": 100,
-            "leech_seeding": False,
-            "max_hp": 0,
-            "mega": False,
-            "moves": [empty_move for _ in range(4)],
-            "perish_count": 4,
-            "primal": False,
-            "sex": False,
-            "stats": {"atk": 0, "def": 0, "spa": 0, "spd": 0, "spe": 0},
-            "status": {
-                "tox": False,
-                "psn": False,
-                "slp": False,
-                "par": False,
-                "brn": False,
-                "frz": False,
-                "fnt": False,
-            },
-            "substitute": False,
-            "taunted": False,
-            "type": {t: False for t in TYPES},
-            "yawned": False,
-        }
+    "active": False,
+    "attracted": False,
+    "base_stats": {"hp": 0, "atk": 0, "def": 0, "spa": 0, "spd": 0, "spe": 0},
+    "current_hp": 0,
+    "encored": False,
+    "exists": False,
+    "focused": False,
+    "infested": False,
+    "leech_seeding": False,
+    "level": 100,
+    "max_hp": 0,
+    "mega": False,
+    "moves": [empty_move for _ in range(4)],
+    "perish_count": 4,
+    "primal": False,
+    "sex": {s: False for s in SEXES},
+    "stats": {"atk": 0, "def": 0, "spa": 0, "spd": 0, "spe": 0},
+    "status": {
+        "tox": False,
+        "psn": False,
+        "slp": False,
+        "par": False,
+        "brn": False,
+        "frz": False,
+        "fnt": False,
+    },
+    "substitute": False,
+    "taunted": False,
+    "type": {t: False for t in TYPES},
+    "yawned": False,
+}
 
 
 class Pokemon:
@@ -91,15 +91,21 @@ class Pokemon:
 
     def _update_formatted_details(self, details: str) -> None:
         details = details.split(", ")
+        if details[-1] == 'shiny':
+            details = details[:-1]
         if len(details) == 3:
-            self.species, self.level, self.sex = details
+            _, self.level, self.sex = details
+            self.level = int(self.level[1:])
         elif len(details) == 2:
-            self.species, self.level = details
-            self.sex = None
+            _, self.level = details
+            self.level = int(self.level[1:])
+            self.sex = "N"
         else:
-            self.species = details[0]
-            self.sex = None
+            _ = details[0]
+            self.sex = "N"
             self.level = 100
+        if self.sex not in SEXES:
+            print("Sex", self.sex, details)
 
     def boost(self, stat: str, value: int) -> None:
         self.boosts[stat] += value
@@ -132,8 +138,10 @@ class Pokemon:
         complement: str = "",
     ) -> None:
         if mega:
+            self.mega = True
             form = self.species.lower() + "mega" + complement
         elif primal:
+            self.primal = True
             form = self.species.lower() + "primal"
         else:
             form = "".join(
@@ -145,8 +153,7 @@ class Pokemon:
             )
         self.ability = POKEDEX[form]["abilities"]
         self.base_stats = POKEDEX[form]["baseStats"]
-        self.types = POKEDEX[form]["types"]
-        self.num = POKEDEX[form]["num"]
+        self.types = [t.lower() for t in POKEDEX[form]["types"]]
 
     def set_status(self, status: str, cure: bool = False) -> None:
         if cure:
@@ -165,8 +172,22 @@ class Pokemon:
             self.current_hp, self.max_hp = [int(el) for el in condition.split("/")]
 
     def update_from_move(self, move: str) -> None:
-        move = move.lower()
+        # TODO : refactor with Move somehow ?
+        # Deal with zoroark and stuff
+        move = ''.join([c for c in move.lower() if c not in " '-"])
+        if move.startswith('hiddenpower'):
+            move = 'hiddenpower'
+        if move in ["struggle", "transform"]:
+            return
+        if move.startswith('z') and move[1:] in MOVES:
+            move = move[1:]
+        if move not in MOVES:
+            return print('unknown :', move)
+        if 'isZ' in MOVES[move]:
+            return
         if move not in self.moves:
+            if len(self.moves) == 4:
+                return print(self.moves.keys(), move, self.species)
             try:
                 self.moves[move] = Move(move)
             except ZMoveException:
@@ -210,7 +231,6 @@ class Pokemon:
         moves = [move.dic_state for move in self.moves.values()]
         while len(moves) < 4:
             moves.append(empty_move)
-
         return {
             "active": self.active,
             "attracted": self.attracted,
@@ -227,7 +247,7 @@ class Pokemon:
             "moves": moves,
             "perish_count": self.perish_count,
             "primal": self.primal,
-            "sex": self.sex,
+            "sex": {s: self.sex == s for s in SEXES},
             "stats": self.stats,
             "status": self.status,
             "substitute": self.substitute,

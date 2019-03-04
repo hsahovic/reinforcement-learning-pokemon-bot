@@ -6,7 +6,7 @@ from players.ml_random_battle import MLRandomBattlePlayer
 from environment.utils import CONFIG
 from time import time
 
-TARGET_BATTLES = 10
+TARGET_BATTLES = 1
 CONCURRENT_BATTLES = 1
 
 

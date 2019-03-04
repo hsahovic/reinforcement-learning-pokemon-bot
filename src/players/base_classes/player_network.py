@@ -40,6 +40,7 @@ class PlayerNetwork(ABC):
         self._password = password
         self._server_address = server_address
         self._username = username
+        self._waiting_start = False
 
         self._lock = Lock()
 
@@ -69,6 +70,7 @@ class PlayerNetwork(ABC):
 
     async def accept_challenge(self, user: str) -> None:
         if self.can_accept_challenge:
+            self._waiting_start = True
             await self.send_message(f"/accept {user}")
 
     async def leave_battle(self, battle: Battle):
@@ -119,8 +121,7 @@ class PlayerNetwork(ABC):
                 json.loads(split_message[2]).get("challengesFrom", {}).items()
             ):
                 if format == self.format:
-                    if self.current_battles < self.target_battles:
-                        await self.accept_challenge(user)
+                    await self.accept_challenge(user)
 
         elif split_message[0].startswith('>battle'):
             await self.battle(message)

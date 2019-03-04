@@ -68,6 +68,7 @@ class Player(PlayerNetwork, ABC):
                     )
                     self.current_battles += 1
                     self.total_battles += 1
+                    self._waiting_start = False
                 # TODO : get opposition team ?
                 current_battle = self.battles[battle_info[2]]
             else:
@@ -82,8 +83,10 @@ class Player(PlayerNetwork, ABC):
                 if split_message[2]:
                     current_battle.update_from_request(json.loads(split_message[2]))
                 if current_battle.is_ready:
+                    # print('yiiiihi')
                     await self.select_move(current_battle)
-
+                # else:
+                    # print("ooooh :'(")
             elif split_message[1] == "callback" and split_message[2] == "trapped":
                 await self.select_move(current_battle, trapped=True)
 
@@ -120,6 +123,9 @@ class Player(PlayerNetwork, ABC):
                 current_battle.won_by(split_message[2])
                 self.current_battles -= 1
                 await self.leave_battle(current_battle)
+            elif split_message[1] == "turn":
+                if current_battle.is_ready:
+                    await self.select_move(current_battle)
             else:
                 current_battle.parse(split_message)
 
@@ -162,7 +168,7 @@ class Player(PlayerNetwork, ABC):
 
     @property
     def can_accept_challenge(self) -> bool:
-        return (
+        return (not self._waiting_start) and (
             self.current_battles < self.max_concurrent_battles
             and self.total_battles < self.target_battles
         )
