@@ -6,7 +6,7 @@ from players.base_classes.player import Player
 from pprint import pprint
 from random import choice
 
-import tensorflow
+# import tensorflow
 import keras
 from keras import backend as K
 from keras.models import Sequential
@@ -46,8 +46,9 @@ class MLRandomBattlePlayer(Player):
             username=username,
         )
 
+        print("#####")
         # NN initialization
-        self.input_size = 4*2 + 8 + 5*8 + 8 # Moves + current pokemon 
+        self.input_size = 4*2 + 7 + 5*7 + 7 # Moves + current pokemon 
                                             # + Other pokemons in hand
                                             # + 1 Opponent pokemon 
         self.output_size = 4 + 5 # Moves + Switches
@@ -68,7 +69,7 @@ class MLRandomBattlePlayer(Player):
 
     def battle_to_features(self, battle: Battle):
         # First simple model
-            # Pokemons: stats (hp, atk, def, spa, spd, spe), current_hp, max_hp 
+            # Pokemons: stats (atk, def, spa, spd, spe), current_hp, max_hp 
             # Moves: base_power, accuracy
         # Input:
             # 4 moves
@@ -77,7 +78,7 @@ class MLRandomBattlePlayer(Player):
             # opponent active pokemon
 
         empty_move_feature = np.zeros(2)
-        empty_pokemon_feature = np.zeros(8)
+        empty_pokemon_feature = np.zeros(7)
         features = np.array([])
 
         for _, move in battle.available_moves:
@@ -90,17 +91,17 @@ class MLRandomBattlePlayer(Player):
 
         for _, pokemon in battle.available_switches:
             features = np.concatenate((features, self.pokemon_to_feature(pokemon)))
-
-        for _ in range(6 - len(battle.available_switches)):
+        
+        for _ in range(5 - len(battle.available_switches)):
             features = np.concatenate((features, empty_pokemon_feature))
-
+        
         features = np.concatenate((features, self.pokemon_to_feature(battle.get_opp_active())))
 
         # state = battle.dic_state
         # print(battle._player_team)
         # print(battle._opponent_team)
-
-        return features
+        
+        return features.reshape((1,-1))
 
     def fit(self, X_train, Y_train, batch_size=32, epochs=10, display=False):
         self.batch_size = batch_size
@@ -134,6 +135,9 @@ class MLRandomBattlePlayer(Player):
         ])
 
     def pokemon_to_feature(self, pokemon: Pokemon):
+        if pokemon == None:
+            return np.zeros(7)
+
         return np.array([
             pokemon.stats["atk"], 
             pokemon.stats["def"], 
@@ -147,7 +151,7 @@ class MLRandomBattlePlayer(Player):
     def predict(self, battle: Battle):
         X_test = self.battle_to_features(battle)
         Y_pred = self.model.predict(X_test)
-        idx = np.argsort(Y_pred)[::-1]
+        idx = np.argsort(Y_pred[0])[::-1]
         for i in idx:
             if i < len(battle.available_moves): # 4 first neurons for moves
                 return f"/choose move {battle.available_moves[i][0]}"
@@ -181,7 +185,6 @@ class MLRandomBattlePlayer(Player):
             f"/choose move {i}" for i, move in battle.available_moves
         ]
         turn = battle.turn_sent
-        
         if choices:
             to_send = self.predict(battle)
             if "move" in to_send:
