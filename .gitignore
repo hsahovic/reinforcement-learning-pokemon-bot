@@ -4,6 +4,7 @@ src/base_code/__pycache__/battle.cpython-36.pyc
 src/base_code/__pycache__/io_process.cpython-36.pyc
 src/base_code/__pycache__/login.cpython-36.pyc
 src/base_code/__pycache__/io_process.cpython-36.pyc
+output.txt
 .vscode/*
 out.txt
 log.txt

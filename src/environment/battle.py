@@ -1,4 +1,4 @@
-from environment.pokemon import empty_pokemon, Pokemon
+from environment.pokemon import empty_pokemon, Pokemon, Move
 from pprint import pprint
 from typing import List, Tuple
 
@@ -121,6 +121,18 @@ class Battle:
             if ident not in self._opponent_team:
                 self._opponent_team[ident] = Pokemon(ident=ident, opponents=True)
             return self._opponent_team[ident]
+
+    def get_active(self) -> Pokemon:
+        for pokemon in self._player_team.values():
+            if pokemon.active:
+                return pokemon
+        return None
+        
+    def get_opp_active(self) -> Pokemon:
+        for pokemon in self._opponent_team.values():
+            if pokemon.active:
+                return pokemon
+        return None
 
     def parse(self, message: List[str]) -> None:
         if message[1] in self.ACTIONS_TO_IGNORE:
@@ -281,7 +293,8 @@ class Battle:
                 self.trapped = True
             for i, move in enumerate(active["moves"]):
                 if "disabled" not in move or not move["disabled"]:
-                    self.available_moves.append((i + 1, move))
+                    # self.available_moves.append((i + 1, move))
+                    self.available_moves.append((i + 1, Move(move["id"])))
             if "canMegaEvo" in active and active["canMegaEvo"]:
                 self.can_mega_evolve = True
             if "canZMove" in active:
@@ -296,7 +309,9 @@ class Battle:
         if not self.trapped:
             for i, pokemon in enumerate(side["pokemon"]):
                 if not pokemon["active"] and pokemon["condition"] != "0 fnt":
-                    self.available_switches.append((i + 1, pokemon["ident"]))
+                    # self.available_switches.append((i + 1, pokemon["ident"]))
+                    self.available_switches.append((i + 1, Pokemon(ident=pokemon["ident"])))
+                    self.available_switches[-1][1].update_from_request(pokemon)
 
         for pokemon_info in side["pokemon"]:
             pokemon = self._get_pokemon_from_reference(pokemon_info["ident"])
