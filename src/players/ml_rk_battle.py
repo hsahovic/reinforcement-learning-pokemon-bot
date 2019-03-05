@@ -4,7 +4,7 @@ from environment.move import empty_move, Move
 from players.base_classes.player import Player
 
 from pprint import pprint
-from random import choice
+from random import choice, shuffle
 
 # import tensorflow
 import keras
@@ -90,8 +90,6 @@ class MLRandomBattlePlayer(Player):
         
         for pokemon in battle.available_switches_object:
             features = np.concatenate((features, self.pokemon_to_feature(pokemon)))
-
-        print(battle.available_switches_object)
         
         for _ in range(5 - len(battle.available_switches)):
             features = np.concatenate((features, empty_pokemon_feature))
@@ -153,13 +151,17 @@ class MLRandomBattlePlayer(Player):
         X_test = self.battle_to_features(battle)
         Y_pred = self.model.predict(X_test)
         idx = np.argsort(Y_pred[0])[::-1]
+        shuffle(idx) ##MEF
         for i in idx:
             if i < len(battle.available_moves): # 4 first neurons for moves
-                return f"/choose move {battle.available_moves[i][0]}"
-            if 3 < i and i - 4 < len(battle.available_switches): # Neurons 4 to 8 for switches
-                return f"/choose switch {battle.available_switches[i - 4][0]}"
-        print("#### WARNING PREDICT")
-        return None
+                to_send = f"/choose move {battle.available_moves[i][0]}"
+                break
+            elif 3 < i and i - 4 < len(battle.available_switches): # Neurons 4 to 8 for switches
+                to_send = f"/choose switch {battle.available_switches[i - 4][0]}"
+                break
+        # print(to_send)
+        self.record_move(int(battle.battle_tag.split('-')[-1]), X_test.flatten(), i)
+        return to_send
 
     def reset_weights(self):
         session = K.get_session()

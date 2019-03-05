@@ -46,6 +46,8 @@ class Player(PlayerNetwork, ABC):
 
         self.battles = {}
 
+        self._recorded_moves = {"battle_tag": [], "context": [], "decision": []}
+
     async def battle(self, message) -> None:
         messages = message.split("\n")
 
@@ -123,6 +125,9 @@ class Player(PlayerNetwork, ABC):
             elif split_message[1] == "win":
                 current_battle.won_by(split_message[2])
                 self.current_battles -= 1
+                if self.current_battles == 0:
+                    self.export_recorded_moves()
+
                 await self.leave_battle(current_battle)
             elif split_message[1] == "turn":
                 if current_battle.is_ready:
@@ -130,6 +135,17 @@ class Player(PlayerNetwork, ABC):
             else:
                 current_battle.parse(split_message)
 
+    def export_recorded_moves(self) -> None:
+        export = []
+        for battle_tag, context, decision in zip(
+            self._recorded_moves["battle_tag"], 
+            self._recorded_moves["context"], 
+            self._recorded_moves["decision"]):
+            export.append(np.concatenate((battle_tag, context, decision)))
+        export = np.array(export, dtype=np.int32)
+        np.savetxt(self._username + ".csv", export, 
+            delimiter=",", comments="", fmt='%i')
+            
     async def random_move(self, battle: Battle, *, trapped: bool = False) -> None:
         # This is a base for further work, especially concerning data output in ML
         moves_probs = np.random.rand(5, 3)
@@ -214,6 +230,11 @@ class Player(PlayerNetwork, ABC):
                 print(commands)
                 print(switch_probs)
                 print(moves_probs)
+
+    def record_move(self, battle_tag, context, move: int) -> None:
+        self._recorded_moves["battle_tag"].append(np.array([battle_tag]))
+        self._recorded_moves["context"].append(context)
+        self._recorded_moves["decision"].append(np.array([move]))
 
     async def run(self) -> None:
         if self.mode == "one_challenge":
