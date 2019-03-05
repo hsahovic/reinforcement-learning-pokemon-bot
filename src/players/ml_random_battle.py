@@ -1,6 +1,7 @@
 from environment.battle import Battle
-from environment.utils import data_flattener
+from environment.utils import CONFIG, data_flattener
 from players.base_classes.player import Player
+from players.random_random_battle import RandomRandomBattlePlayer
 
 from pprint import pprint
 from random import choices
@@ -8,13 +9,120 @@ from random import choices
 from keras.models import Sequential
 from keras.layers import Dense
 
+import asyncio
 import numpy as np
 
 
 class ModelManager:
 
     def __init__(self):
-        pass
+        self.model = Sequential()
+
+        self.model.add(Dense(512, input_dim=5390, activation="elu"))
+        self.model.add(Dense(128, activation="elu"))
+        self.model.add(Dense(20, activation="softmax"))
+
+        self.model.compile(
+            loss="categorical_crossentropy", optimizer="rmsprop", metrics=["accuracy"]
+        )
+
+        print(self.model.summary())
+
+    def feed(self, state):
+        x = self.format_x(state)
+        preds = self.model.predict(np.array([x]))[0]
+        return preds[:15].reshape((5, 3)), preds[-5:]
+
+    def format_x(self, state):
+        return data_flattener(state)
+
+    async def initial_training(self, number_of_battles=10, concurrent_battles = 10, log_messages=True):
+        players = [
+            RandomRandomBattlePlayer(
+                authentification_address=CONFIG["authentification_address"],
+                max_concurrent_battles=concurrent_battles,
+                log_messages_in_console=log_messages,
+                mode="challenge",
+                password=CONFIG["users"][0]["password"],
+                server_address=CONFIG["local_adress"],
+                target_battles=number_of_battles,
+                to_target=CONFIG["users"][1]["username"],
+                username=CONFIG["users"][0]["username"],
+            ),
+            RandomRandomBattlePlayer(
+                authentification_address=CONFIG["authentification_address"],
+                log_messages_in_console=log_messages,
+                max_concurrent_battles=concurrent_battles,
+                mode="wait",
+                password=CONFIG["users"][1]["password"],
+                server_address=CONFIG["local_adress"],
+                target_battles=number_of_battles,
+                username=CONFIG["users"][1]["username"],
+            ),
+        ]
+        to_await = []
+        for player in players:
+            to_await.append(asyncio.ensure_future(player.listen()))
+            to_await.append(asyncio.ensure_future(player.run()))
+
+        for el in to_await:
+            await el
+
+        print("Initial battles finished.")
+
+        x = players[0].winning_moves_data['context'] + players[1].winning_moves_data['context']
+        y = players[0].winning_moves_data['decision'] + players[1].winning_moves_data['decision']
+
+        self.train(x, y)
+
+    def train(self, x, y):
+        x = np.array([self.format_x(el) for el in x])
+        y_t = np.zeros(shape = (len(y), 20))
+        for i, val in enumerate(y):
+            y_t[i, val] = 1
+        self.model.fit(x, y_t, epochs = 3, batch_size = 64)
+
+    async def self_training(self, iterations = 5, number_of_battles=10, concurrent_battles = 10, log_messages=True):
+        for _ in range(iterations):
+            players = [
+                MLRandomBattlePlayer(
+                    authentification_address=CONFIG["authentification_address"],
+                    max_concurrent_battles=concurrent_battles,
+                    log_messages_in_console=log_messages,
+                    mode="challenge",
+                    model_manager = self,
+                    password=CONFIG["users"][0]["password"],
+                    server_address=CONFIG["local_adress"],
+                    target_battles=number_of_battles,
+                    to_target=CONFIG["users"][1]["username"],
+                    username=CONFIG["users"][0]["username"],
+                ),
+                MLRandomBattlePlayer(
+                    authentification_address=CONFIG["authentification_address"],
+                    log_messages_in_console=log_messages,
+                    max_concurrent_battles=concurrent_battles,
+                    mode="wait",
+                    model_manager=self,
+                    password=CONFIG["users"][1]["password"],
+                    server_address=CONFIG["local_adress"],
+                    target_battles=number_of_battles,
+                    username=CONFIG["users"][1]["username"],
+                ),
+            ]
+            to_await = []
+            for player in players:
+                to_await.append(asyncio.ensure_future(player.listen()))
+                to_await.append(asyncio.ensure_future(player.run()))
+
+            for el in to_await:
+                await el
+
+            print("One round finished.")
+
+            x = players[0].winning_moves_data['context'] + players[1].winning_moves_data['context']
+            y = players[0].winning_moves_data['decision'] + players[1].winning_moves_data['decision']
+
+            self.train(x, y)
 
 class MLRandomBattlePlayer(Player):
     def __init__(
@@ -45,31 +153,14 @@ class MLRandomBattlePlayer(Player):
             to_target=to_target,
             username=username,
         )
-        self.model = Sequential()
-
-        self.model.add(Dense(512, input_dim=5390, activation="elu"))
-        self.model.add(Dense(128, activation="elu"))
-        self.model.add(Dense(20, activation="softmax"))
-
-        self.model.compile(
-            loss="categorical_crossentropy", optimizer="rmsprop", metrics=["accuracy"]
-        )
-
-        # model.fit(x_train, y_train,
-        #           epochs=20,
-        #           batch_size=128)
-        # score = model.evaluate(x_test, y_test, batch_size=128)
+        self.model_manager = model_manager
 
     async def select_move(self, battle: Battle, *, trapped: bool = False):
-        state = np.array(data_flattener(battle.dic_state))
+        state = battle.dic_state
         if np.random.rand() < 0.9:
-            preds = self.model.predict(np.array([state]))[0]
-
-            moves_probs = preds[:15].reshape((5, 3))
-            switch_probs = preds[-5:]
+            moves_probs, switch_probs = self.model_manager.feed(state)
         else:
-            moves_probs = np.random.rand(5, 3)
-            switch_probs = np.random.rand(5)
+            moves_probs, switch_probs = np.random.rand(5, 3), np.random.rand(5)
 
         commands = []
 
@@ -93,7 +184,7 @@ class MLRandomBattlePlayer(Player):
                 commands.append("")
                 commands.append("")
                 commands.append("")
-                moves_probs[i, 0] = 0
+                moves_probs[i, :] = 0
             else:
                 if not (
                     battle.can_z_move
@@ -115,8 +206,6 @@ class MLRandomBattlePlayer(Player):
         commands.append(f"")
         if "struggle" not in available_moves:
             moves_probs[4, 0] = 0
-        else:
-            print(moves_probs)
         moves_probs[4, 1:] = 0
 
         if not battle.can_mega_evolve:
@@ -124,6 +213,9 @@ class MLRandomBattlePlayer(Player):
 
         else:
             moves_probs[:, 1] = 0
+
+        if trapped:
+            switch_probs[:] = 0
 
         probs = []
         for i, p in enumerate(switch_probs):
@@ -137,10 +229,6 @@ class MLRandomBattlePlayer(Player):
 
         probs = np.array(probs)
         if sum(probs):
-            print(probs)
-            print(commands)
-            print(switch_probs)
-            print(moves_probs)
             probs /= sum(probs)
             choice = choices(list(range(len(probs))), probs)[0]
             battle.record_move(state, choice)

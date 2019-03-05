@@ -131,10 +131,8 @@ class Player(PlayerNetwork, ABC):
                 current_battle.parse(split_message)
 
     async def random_move(self, battle: Battle, *, trapped: bool = False) -> None:
-        # This is a base for further work, especially concerning data output in ML
-        moves_probs = np.random.rand(5, 3)
-        # 5th for struggle ; 2 and 3 for zmove / mega
-        switch_probs = np.random.rand(5)
+        state = battle.dic_state
+        moves_probs, switch_probs = np.random.rand(5, 3), np.random.rand(5)
 
         commands = []
 
@@ -158,7 +156,7 @@ class Player(PlayerNetwork, ABC):
                 commands.append("")
                 commands.append("")
                 commands.append("")
-                moves_probs[i, 0] = 0
+                moves_probs[i, :] = 0
             else:
                 if not (
                     battle.can_z_move
@@ -180,8 +178,6 @@ class Player(PlayerNetwork, ABC):
         commands.append(f"")
         if "struggle" not in available_moves:
             moves_probs[4, 0] = 0
-        else:
-            print(moves_probs)
         moves_probs[4, 1:] = 0
 
         if not battle.can_mega_evolve:
@@ -190,25 +186,32 @@ class Player(PlayerNetwork, ABC):
         else:
             moves_probs[:, 1] = 0
 
+        if trapped:
+            switch_probs[:] = 0
+
         probs = []
         for i, p in enumerate(switch_probs):
             probs.append(p)
 
         for i, prob in enumerate(moves_probs):
             p, z, m = prob
-            probs.append(p * (1 - z) * (1 - m))
-            probs.append(p * z)
-            probs.append(p * m)
+            probs.append(p)
+            probs.append(z)
+            probs.append(m)
 
         probs = np.array(probs)
+
         if sum(probs):
             probs /= sum(probs)
+            choice = choices([i for i, val in enumerate(probs)], probs)[0]
+            battle.record_move(state, choice)
             try:
                 await self.send_message(
-                    message=choices(commands, probs)[0],
+                    message=commands[choice],
                     message_2=str(battle.turn_sent),
                     room=battle.battle_tag,
                 )
+                return
             except ValueError:
                 print(probs)
                 print(commands)
@@ -254,24 +257,25 @@ class Player(PlayerNetwork, ABC):
 
     @property
     def moves_data(self):
-        data = {"context": [], "move": [], "n_move_in_battle": [], "battle_won": []}
+        data = {"context": [], "decision": [], "n_move_in_battle": [], "battle_won": []}
         for battle in self.battles.values():
-            data = battle.moves_data
-            for context, move in zip(data["context"], data["move"]):
+            battle_data = battle.moves_data
+            for context, move in zip(battle_data["context"], battle_data["decision"]):
                 data["context"].append(context)
-                data["move"].append(move)
-                data["n_move_in_battle"].append(len(data["move"]))
+                data["decision"].append(move)
+                data["n_move_in_battle"].append(len(battle_data["decision"]))
                 data["battle_won"].append(battle.won)
+        return data
 
     @property
     def winning_moves_data(self):
-        data = {"context": [], "move": [], "n_move_in_battle": []}
+        data = {"context": [], "decision": [], "n_move_in_battle": []}
         for battle in self.battles.values():
             if not battle.won:
                 continue
-            data = battle.moves_data
-            for context, move in zip(data["context"], data["move"]):
+            battle_data = battle.moves_data
+            for context, move in zip(battle_data["context"], battle_data["decision"]):
                 data["context"].append(context)
-                data["move"].append(move)
-                data["n_move_in_battle"].append(len(data["move"]))
-
+                data["decision"].append(move)
+                data["n_move_in_battle"].append(len(battle_data["decision"]))
+        return data
