@@ -90,7 +90,7 @@ class MLRandomBattlePlayer(Player):
         features = np.concatenate((features, self.pokemon_to_feature(battle.get_active())))
 
         for _, pokemon in battle.available_switches:
-            features = np.concatenate((features, self.pokemon_to_feature(pokemon)))
+            features = np.concatenate((features, self.pokemon_to_feature(Pokemon(ident=pokemon))))
         
         for _ in range(5 - len(battle.available_switches)):
             features = np.concatenate((features, empty_pokemon_feature))
@@ -129,12 +129,14 @@ class MLRandomBattlePlayer(Player):
             # print('Test accuracy:', score[1])
 
     def move_to_feature(self, move: Move):
+        move = Move(move['id'])
         return np.array([
             move.base_power,
             move.accuracy
         ])
 
     def pokemon_to_feature(self, pokemon: Pokemon):
+        # pokemon = Pokemon(ident=pokemon)
         if pokemon == None:
             return np.zeros(7)
 
