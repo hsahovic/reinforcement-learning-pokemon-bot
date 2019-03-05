@@ -46,7 +46,6 @@ class MLRandomBattlePlayer(Player):
             username=username,
         )
 
-        print("#####")
         # NN initialization
         self.input_size = 4*2 + 7 + 5*7 + 7 # Moves + current pokemon 
                                             # + Other pokemons in hand
@@ -54,9 +53,9 @@ class MLRandomBattlePlayer(Player):
         self.output_size = 4 + 5 # Moves + Switches
         # Model
         self.model = Sequential()
-        self.model.add(Dense(self.input_size, input_dim=self.input_size, activation='relu', init='uniform'))
-        self.model.add(Dense(56, activation='relu', init='uniform'))
-        self.model.add(Dense(self.output_size, activation='softmax', init='uniform'))
+        self.model.add(Dense(self.input_size, input_dim=self.input_size, activation='relu', kernel_initializer='uniform'))
+        self.model.add(Dense(33, activation='relu', kernel_initializer='uniform'))
+        self.model.add(Dense(self.output_size, activation='softmax', kernel_initializer='uniform'))
         # Parameters
         self.model.compile(
             loss=keras.losses.binary_crossentropy,
@@ -81,21 +80,23 @@ class MLRandomBattlePlayer(Player):
         empty_pokemon_feature = np.zeros(7)
         features = np.array([])
 
-        for _, move in battle.available_moves:
+        for move in battle.available_moves_object:
             features = np.concatenate((features, self.move_to_feature(move)))
 
-        for _ in range(4 - len(battle.available_moves)):
+        for _ in range(4 - len(battle.available_moves_object)):
             features = np.concatenate((features, empty_move_feature))
 
-        features = np.concatenate((features, self.pokemon_to_feature(battle.get_active())))
+        features = np.concatenate((features, self.pokemon_to_feature(battle.active_pokemon)))
+        
+        for pokemon in battle.available_switches_object:
+            features = np.concatenate((features, self.pokemon_to_feature(pokemon)))
 
-        for _, pokemon in battle.available_switches:
-            features = np.concatenate((features, self.pokemon_to_feature(Pokemon(ident=pokemon))))
+        print(battle.available_switches_object)
         
         for _ in range(5 - len(battle.available_switches)):
             features = np.concatenate((features, empty_pokemon_feature))
         
-        features = np.concatenate((features, self.pokemon_to_feature(battle.get_opp_active())))
+        features = np.concatenate((features, self.pokemon_to_feature(battle.opp_active_pokemon)))
 
         # state = battle.dic_state
         # print(battle._player_team)
@@ -129,14 +130,12 @@ class MLRandomBattlePlayer(Player):
             # print('Test accuracy:', score[1])
 
     def move_to_feature(self, move: Move):
-        move = Move(move['id'])
         return np.array([
             move.base_power,
             move.accuracy
         ])
 
     def pokemon_to_feature(self, pokemon: Pokemon):
-        # pokemon = Pokemon(ident=pokemon)
         if pokemon == None:
             return np.zeros(7)
 

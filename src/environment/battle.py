@@ -121,20 +121,6 @@ class Battle:
                 self._opponent_team[ident] = Pokemon(ident=ident, opponents=True)
             return self._opponent_team[ident]
 
-    # This should be changed to a property
-    def get_active(self) -> Pokemon:
-        for pokemon in self._player_team.values():
-            if pokemon.active:
-                return pokemon
-        return None
-        
-    # This should be changed to a property
-    def get_opp_active(self) -> Pokemon:
-        for pokemon in self._opponent_team.values():
-            if pokemon.active:
-                return pokemon
-        return None
-
     def parse(self, message: List[str]) -> None:
         if message[1] in self.ACTIONS_TO_IGNORE:
             return
@@ -345,6 +331,27 @@ class Battle:
         return list(active.moves.keys())
 
     @property
+    def active_pokemon(self) -> Pokemon:    
+        for pokemon in self._player_team.values():
+            if pokemon.active:
+                return pokemon
+        return None
+
+    @property
+    def available_moves_object(self) -> Move:
+        moves = []
+        for _, move in self.available_moves:
+            moves.append(Move(move['id']))
+        return moves
+
+    @property
+    def available_switches_object(self) -> Pokemon:
+        switches = []
+        for _, ident in self.available_switches:
+            switches.append(self._player_team[ident.split(': ')[-1]])
+        return switches
+
+    @property
     def battle_tag(self) -> str:
         return self._battle_tag
 
@@ -395,6 +402,13 @@ class Battle:
             if self._player_role == "p1"
             else self.p1_fields,
         }
+        
+    @property
+    def opp_active_pokemon(self) -> Pokemon:
+        for pokemon in self._opponent_team.values():
+            if pokemon.active:
+                return pokemon
+        return None
 
     @property
     def player_back(self) -> List[str]:
