@@ -2,12 +2,12 @@ import asyncio
 import json
 
 from players.random_random_battle import RandomRandomBattlePlayer
-from players.ml_rk_battle import MLRandomBattlePlayer
+from players.ml_random_battle import MLRandomBattlePlayer
 from environment.utils import CONFIG
 from time import time
 
 TARGET_BATTLES = 10
-CONCURRENT_BATTLES = 10
+CONCURRENT_BATTLES = 1
 
 
 async def main():

@@ -131,9 +131,9 @@ class Player(PlayerNetwork, ABC):
                 current_battle.parse(split_message)
 
     async def random_move(self, battle: Battle, *, trapped: bool = False) -> None:
-        
         # This is a base for further work, especially concerning data output in ML
-        moves_probs = np.random.rand(4, 3)
+        moves_probs = np.random.rand(5, 3)
+        # 5th for struggle ; 2 and 3 for zmove / mega
         switch_probs = np.random.rand(5)
         
         commands = []
@@ -170,6 +170,14 @@ class Player(PlayerNetwork, ABC):
             commands.append(f"")
             commands.append(f"")
             commands.append(f"")
+        commands.append(f"/choose move struggle")
+        commands.append(f"")
+        commands.append(f"")
+        if "struggle" not in available_moves:
+            moves_probs[4,0] = 0
+        else:
+            print(moves_probs)
+        moves_probs[4,1:] = 0
 
         if not battle.can_mega_evolve:
             moves_probs[:, 2] = 0
@@ -188,13 +196,19 @@ class Player(PlayerNetwork, ABC):
             probs.append(p * m)
 
         probs = np.array(probs)
-        probs /= sum(probs)
-
-        await self.send_message(
-            message=choices(commands, probs)[0],
-            message_2=str(battle.turn_sent),
-            room=battle.battle_tag,
-        )
+        if sum(probs):
+            probs /= sum(probs)
+            try:
+                await self.send_message(
+                    message=choices(commands, probs)[0],
+                    message_2=str(battle.turn_sent),
+                    room=battle.battle_tag,
+                )
+            except ValueError:
+                print(probs)
+                print(commands)
+                print(switch_probs)
+                print(moves_probs)
 
     async def run(self) -> None:
         if self.mode == "one_challenge":

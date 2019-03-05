@@ -36,7 +36,6 @@ class Battle:
         "-transform",
         "-zbroken",  # TODO : what is this ?
         "-zpower",  # TODO : item assignment ?
-        "callback",
         "cant",
         "deinit",
         "detailschange",
@@ -122,12 +121,14 @@ class Battle:
                 self._opponent_team[ident] = Pokemon(ident=ident, opponents=True)
             return self._opponent_team[ident]
 
+    # This should be changed to a property
     def get_active(self) -> Pokemon:
         for pokemon in self._player_team.values():
             if pokemon.active:
                 return pokemon
         return None
         
+    # This should be changed to a property
     def get_opp_active(self) -> Pokemon:
         for pokemon in self._opponent_team.values():
             if pokemon.active:
@@ -162,6 +163,10 @@ class Battle:
         elif message[1] == "-status":
             pokemon = self._get_pokemon_from_reference(message[2])
             pokemon.set_status(message[3])
+        elif message[1] == "callback" and message[2] == "trapped":
+            self.trapped = True
+            pokemon = self._get_pokemon_from_reference(message[2])
+            pokemon.set_status(message[3], cure=True)
         elif message[1] == "-curestatus":
             pokemon = self._get_pokemon_from_reference(message[2])
             pokemon.set_status(message[3], cure=True)
@@ -285,16 +290,14 @@ class Battle:
         self.can_z_move = False
         self.trapped = False
 
-        # TODO : clean exploratory prints
-
         if "active" in request:
             active = request["active"][0]
             if "trapped" in active and active["trapped"]:
                 self.trapped = True
             for i, move in enumerate(active["moves"]):
                 if "disabled" not in move or not move["disabled"]:
-                    # self.available_moves.append((i + 1, move))
-                    self.available_moves.append((i + 1, Move(move["id"])))
+                    self.available_moves.append((i + 1, move))
+                    # self.available_moves.append((i + 1, Move(move["id"])))
             if "canMegaEvo" in active and active["canMegaEvo"]:
                 self.can_mega_evolve = True
             if "canZMove" in active:
@@ -309,9 +312,9 @@ class Battle:
         if not self.trapped:
             for i, pokemon in enumerate(side["pokemon"]):
                 if not pokemon["active"] and pokemon["condition"] != "0 fnt":
-                    # self.available_switches.append((i + 1, pokemon["ident"]))
-                    self.available_switches.append((i + 1, Pokemon(ident=pokemon["ident"])))
-                    self.available_switches[-1][1].update_from_request(pokemon)
+                    self.available_switches.append((i + 1, pokemon["ident"]))
+                    # self.available_switches.append((i + 1, Pokemon(ident=pokemon["ident"])))
+                    # self.available_switches[-1][1].update_from_request(pokemon)
 
         for pokemon_info in side["pokemon"]:
             pokemon = self._get_pokemon_from_reference(pokemon_info["ident"])
