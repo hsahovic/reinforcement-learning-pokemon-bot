@@ -11,12 +11,18 @@ from keras.layers import Dense
 import numpy as np
 
 
+class ModelManager:
+
+    def __init__(self):
+        pass
+
 class MLRandomBattlePlayer(Player):
     def __init__(
         self,
         username: str,
         password: str,
-        mode: str = "wait",
+        mode: str,
+        model_manager:ModelManager,
         *,
         authentification_address=None,
         avatar: int = None,
@@ -125,18 +131,19 @@ class MLRandomBattlePlayer(Player):
 
         for i, prob in enumerate(moves_probs):
             p, z, m = prob
-            probs.append(p * (1 - z) * (1 - m))
-            probs.append(p * z)
-            probs.append(p * m)
+            probs.append(p)
+            probs.append(z)
+            probs.append(m)
 
         probs = np.array(probs)
         if sum(probs):
+            print(probs)
+            print(commands)
+            print(switch_probs)
+            print(moves_probs)
             probs /= sum(probs)
             choice = choices(list(range(len(probs))), probs)[0]
-            print(self.battles)
-            if "data" not in self.battles[battle.battle_tag.split('-')[-1]]:
-                self.battles[battle.battle_tag.split('-')[-1]]["data"] = []
-            self.battles[battle.battle_tag.split('-')[-1]]["data"].append((state, [int(i == choice) for i in range(len(probs))]))
+            battle.record_move(state, choice)
             try:
                 await self.send_message(
                     message=commands[choice],
@@ -150,4 +157,5 @@ class MLRandomBattlePlayer(Player):
                 print(switch_probs)
                 print(moves_probs)
         if available_moves or available_switches:
+            print('An error occured ?')
             await self.random_move(battle=battle, trapped=trapped)
