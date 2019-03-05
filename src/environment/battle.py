@@ -318,16 +318,17 @@ class Battle:
         self._won = self._player_name == winner
 
     @property
+    def active_moves(self) -> List[str]:
+        active = [
+            pokemon
+            for pokemon in self._player_team.values()
+            if pokemon.active
+        ][0]
+        return list(active.moves.keys())
+
+    @property
     def battle_tag(self) -> str:
         return self._battle_tag
-
-    @property
-    def is_ready(self) -> bool:
-        return (self._player_role is not None) and self._player_team
-
-    @property
-    def turn_sent(self) -> int:
-        return self._turn * 2 + (1 if self._player_role == "p2" else 0)
 
     @property
     def dic_state(self) -> dict:
@@ -376,3 +377,15 @@ class Battle:
             if self._player_role == "p1"
             else self.p1_fields,
         }
+
+    @property
+    def player_back(self) -> List[str]:
+        return [pokemon.species for pokemon in self._player_team.values() if not pokemon.active]
+
+    @property
+    def is_ready(self) -> bool:
+        return (self._player_role is not None) and self._player_team
+
+    @property
+    def turn_sent(self) -> int:
+        return self._turn * 2 + (1 if self._player_role == "p2" else 0)

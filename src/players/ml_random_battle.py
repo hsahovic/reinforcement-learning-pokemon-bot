@@ -36,8 +36,8 @@ class MLRandomBattlePlayer(Player):
         )
 
     async def select_move(self, battle: Battle, *, trapped: bool = False):
-        state = data_flattener(battle.dic_state)
-        assert len(state) == 5390
+        # state = data_flattener(battle.dic_state)
+        # assert len(state) == 5390
 
         # TODO : clean this mess up, when we are kinda sure it works
         # Apparently, we do have six pokemon in each team every time we run, so that

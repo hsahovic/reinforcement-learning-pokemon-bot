@@ -201,6 +201,7 @@ class Pokemon:
         self.active = request["active"]
         self.focused = False
         self.item = request["item"]
+        self.moves = {} # TODO : check that this is kinda clever
         for move in request["moves"]:
             self.update_from_move(move)
         self.stats = request["stats"]

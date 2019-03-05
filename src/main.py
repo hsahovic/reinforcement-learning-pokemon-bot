@@ -6,8 +6,8 @@ from players.ml_random_battle import MLRandomBattlePlayer
 from environment.utils import CONFIG
 from time import time
 
-TARGET_BATTLES = 1
-CONCURRENT_BATTLES = 1
+TARGET_BATTLES = 10
+CONCURRENT_BATTLES = 10
 
 
 async def main():
@@ -16,7 +16,7 @@ async def main():
         MLRandomBattlePlayer(
             authentification_address=CONFIG["authentification_address"],
             max_concurrent_battles=CONCURRENT_BATTLES,
-            log_messages_in_console=False,
+            log_messages_in_console=True,
             mode="challenge",
             password=CONFIG["users"][0]["password"],
             server_address=CONFIG["local_adress"],
@@ -26,7 +26,7 @@ async def main():
         ),
         MLRandomBattlePlayer(
             authentification_address=CONFIG["authentification_address"],
-            log_messages_in_console=False,
+            log_messages_in_console=True,
             max_concurrent_battles=CONCURRENT_BATTLES,
             mode="wait",
             password=CONFIG["users"][1]["password"],
