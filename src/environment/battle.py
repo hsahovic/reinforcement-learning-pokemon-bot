@@ -107,12 +107,16 @@ class Battle:
 
         self.wait = False
 
+        self._recorded_moves = {"context": [], "decision": []}
+
     def _get_pokemon_from_reference(self, message: str) -> Pokemon:
         # TODO : check that this actually works
         # message_list = message.split(": ")
         # player, ident = message_list[0], message_list[1]
         player, ident = message[:2], message.split(": ")[-1]
-        if (player == self._player_role) or (self._player_role is None): # this is a hack ; apparently it happens on battle init. This needs to be looked into.
+        if (player == self._player_role) or (
+            self._player_role is None
+        ):  # this is a hack ; apparently it happens on battle init. This needs to be looked into.
             if ident not in self._player_team:
                 self._player_team[ident] = Pokemon(ident=ident)
             return self._player_team[ident]
@@ -127,7 +131,7 @@ class Battle:
             if pokemon.active:
                 return pokemon
         return None
-        
+
     # This should be changed to a property
     def get_opp_active(self) -> Pokemon:
         for pokemon in self._opponent_team.values():
@@ -278,6 +282,10 @@ class Battle:
     def player_is_p2(self) -> None:
         self._player_role = "p2"
 
+    def record_move(self, context, move: int) -> None:
+        self._recorded_moves["context"].append(context)
+        self._recorded_moves["decision"].append(move)
+
     def update_from_request(self, request: dict) -> None:
         if "wait" in request and request["wait"]:
             self.wait = True
@@ -337,11 +345,9 @@ class Battle:
 
     @property
     def active_moves(self) -> List[str]:
-        active = [
-            pokemon
-            for pokemon in self._player_team.values()
-            if pokemon.active
-        ][0]
+        active = [pokemon for pokemon in self._player_team.values() if pokemon.active][
+            0
+        ]
         return list(active.moves.keys())
 
     @property
@@ -398,12 +404,31 @@ class Battle:
 
     @property
     def player_back(self) -> List[str]:
-        return [pokemon.species for pokemon in self._player_team.values() if not pokemon.active]
+        return [
+            pokemon.species
+            for pokemon in self._player_team.values()
+            if not pokemon.active
+        ]
 
     @property
     def is_ready(self) -> bool:
         return (self._player_role is not None) and self._player_team
 
     @property
+    def moves_data(self):
+        return self._recorded_moves
+
+    @property
     def turn_sent(self) -> int:
         return self._turn * 2 + (1 if self._player_role == "p2" else 0)
+
+    @property
+    def winning_moves_data(self):
+        if self._won:
+            return self.recorded_moves
+        else:
+            return {"context": [], "decision": []}
+
+    @property
+    def won(self):
+        return self._won

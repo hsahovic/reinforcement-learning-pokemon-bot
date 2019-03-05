@@ -135,11 +135,12 @@ class Player(PlayerNetwork, ABC):
         moves_probs = np.random.rand(5, 3)
         # 5th for struggle ; 2 and 3 for zmove / mega
         switch_probs = np.random.rand(5)
-        
+
         commands = []
 
         available_switches = {
-            battle._player_team[el[1][4:]].species : el[0] for el in battle.available_switches
+            battle._player_team[el[1][4:]].species: el[0]
+            for el in battle.available_switches
         }
         for i, pokemon in enumerate(battle.player_back):
             if pokemon not in available_switches:
@@ -150,7 +151,7 @@ class Player(PlayerNetwork, ABC):
         switch_probs[i + 1 :] = 0
 
         available_moves = {
-            el[1]["id"]:el[0] for el in battle.available_moves if "id" in el[1]
+            el[1]["id"]: el[0] for el in battle.available_moves if "id" in el[1]
         }
         for i, move in enumerate(battle.active_moves):
             if move not in available_moves:
@@ -159,7 +160,11 @@ class Player(PlayerNetwork, ABC):
                 commands.append("")
                 moves_probs[i, 0] = 0
             else:
-                if not (battle.can_z_move and available_moves[move] in battle.can_z_move and battle.can_z_move[available_moves[move]]):
+                if not (
+                    battle.can_z_move
+                    and available_moves[move] in battle.can_z_move
+                    and battle.can_z_move[available_moves[move]]
+                ):
                     moves_probs[i, 1] = 0
                 commands.append(f"/choose move {available_moves[move]}")
                 commands.append(f"/choose move {available_moves[move]} zmove")
@@ -174,10 +179,10 @@ class Player(PlayerNetwork, ABC):
         commands.append(f"")
         commands.append(f"")
         if "struggle" not in available_moves:
-            moves_probs[4,0] = 0
+            moves_probs[4, 0] = 0
         else:
             print(moves_probs)
-        moves_probs[4,1:] = 0
+        moves_probs[4, 1:] = 0
 
         if not battle.can_mega_evolve:
             moves_probs[:, 2] = 0
@@ -230,6 +235,10 @@ class Player(PlayerNetwork, ABC):
                 f"Unknown mode {self.mode}. Please specify one of the following modes: 'challenge', 'wait', 'battle_online'"
             )
 
+    @abstractmethod
+    def select_move(self, battle: Battle, *, trapped: bool = False) -> None:
+        pass
+
     @property
     def can_accept_challenge(self) -> bool:
         return (not self._waiting_start) and (
@@ -243,6 +252,26 @@ class Player(PlayerNetwork, ABC):
             self.total_battles == self.target_battles and self.current_battles == 0
         )
 
-    @abstractmethod
-    def select_move(self, battle: Battle, *, trapped: bool = False) -> None:
-        pass
+    @property
+    def moves_data(self):
+        data = {"context": [], "move": [], "n_move_in_battle": [], "battle_won": []}
+        for battle in self.battles.values():
+            data = battle.moves_data
+            for context, move in zip(data["context"], data["move"]):
+                data["context"].append(context)
+                data["move"].append(move)
+                data["n_move_in_battle"].append(len(data["move"]))
+                data["battle_won"].append(battle.won)
+
+    @property
+    def winning_moves_data(self):
+        data = {"context": [], "move": [], "n_move_in_battle": []}
+        for battle in self.battles.values():
+            if not battle.won:
+                continue
+            data = battle.moves_data
+            for context, move in zip(data["context"], data["move"]):
+                data["context"].append(context)
+                data["move"].append(move)
+                data["n_move_in_battle"].append(len(data["move"]))
+
