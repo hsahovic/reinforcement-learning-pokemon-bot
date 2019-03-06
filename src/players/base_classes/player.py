@@ -125,7 +125,8 @@ class Player(PlayerNetwork, ABC):
             elif split_message[1] == "win":
                 current_battle.won_by(split_message[2])
                 self.current_battles -= 1
-                if self.current_battles == 0:
+                print(self.total_battles)
+                if self.total_battles == self.target_battles:
                     self.export_recorded_moves()
 
                 await self.leave_battle(current_battle)
@@ -136,15 +137,21 @@ class Player(PlayerNetwork, ABC):
                 current_battle.parse(split_message)
 
     def export_recorded_moves(self) -> None:
+        won_battle_tags = []
+        for battle in self.battles.values():
+            if battle.won:
+                won_battle_tags.append(int(battle.battle_tag.split('-')[-1]))
         export = []
         for battle_tag, context, decision in zip(
             self._recorded_moves["battle_tag"], 
             self._recorded_moves["context"], 
             self._recorded_moves["decision"]):
-            export.append(np.concatenate((battle_tag, context, decision)))
+            if battle_tag in won_battle_tags:
+                export.append(np.concatenate((battle_tag, context, decision)))
         export = np.array(export, dtype=np.int32)
         np.savetxt(self._username + ".csv", export, 
             delimiter=",", comments="", fmt='%i')
+        print(f"PLAYER {self.username}: {len(won_battle_tags)*100/self.target_battles:.1f}% of winnings over {self.target_battles} battles")
             
     async def random_move(self, battle: Battle, *, trapped: bool = False) -> None:
         # This is a base for further work, especially concerning data output in ML
