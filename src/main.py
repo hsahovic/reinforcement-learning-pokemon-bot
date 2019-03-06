@@ -8,7 +8,7 @@ from time import time
 
 import numpy as np
 
-TARGET_BATTLES = 50
+TARGET_BATTLES = 20
 CONCURRENT_BATTLES = 1
 
 
@@ -18,7 +18,7 @@ async def main():
         MLRKBattlePlayer(
             authentification_address=CONFIG["authentification_address"],
             max_concurrent_battles=CONCURRENT_BATTLES,
-            log_messages_in_console=True,
+            log_messages_in_console=False,
             mode="challenge",
             password=CONFIG["users"][0]["password"],
             server_address=CONFIG["local_adress"],
@@ -28,7 +28,7 @@ async def main():
         ),
         RandomRandomBattlePlayer(
             authentification_address=CONFIG["authentification_address"],
-            log_messages_in_console=True,
+            log_messages_in_console=False,
             max_concurrent_battles=CONCURRENT_BATTLES,
             mode="wait",
             password=CONFIG["users"][1]["password"],
@@ -50,8 +50,6 @@ async def main():
 
     print(f"This took {time() - t}s to run.")
 
-n = 1
 if __name__ == "__main__":
-    for i in range(n):
-        print(f"\n{'='*30} STARTING LOOP {i+1} {'='*30}\n")
-        asyncio.get_event_loop().run_until_complete(main())
+    print(f"\n{'='*30} STARTING LOOP {'='*30}\n")
+    asyncio.get_event_loop().run_until_complete(main())

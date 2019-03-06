@@ -123,7 +123,8 @@ class Player(PlayerNetwork, ABC):
             elif split_message[1] == "win":
                 current_battle.won_by(split_message[2])
                 self.current_battles -= 1
-                print(self.total_battles)
+                if self._username == "inf581_bot_1":
+                    print(f'Battle #{self.total_battles} out of {self.target_battles}')
                 if self.total_battles == self.target_battles:
                     self.export_perf()
                     self.export_recorded_moves()

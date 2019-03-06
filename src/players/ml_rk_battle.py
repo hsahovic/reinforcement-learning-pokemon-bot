@@ -62,7 +62,7 @@ class MLRKBattlePlayer(Player):
             optimizer=keras.optimizers.Adagrad(),
             metrics=['categorical_accuracy']
         )
-        self.model.summary()
+        # self.model.summary()
         self.batch_size = 32
         self.epochs = 3
 
@@ -111,7 +111,7 @@ class MLRKBattlePlayer(Player):
         history = self.model.fit(X_train, Y_train,
                                 batch_size=self.batch_size,
                                 epochs=self.epochs,
-                                verbose=1,
+                                verbose=0,
                                 validation_split=.1)
         # Graph Layout
         if display:
@@ -130,7 +130,7 @@ class MLRKBattlePlayer(Player):
             # print('Test accuracy:', score[1])
 
     def fit_from_file(self, file):
-        max_battles = 5
+        max_battles = 20
         features = np.loadtxt(open(file + ".csv", "rb"), delimiter=",", skiprows=0)  
         if len(features) > 0:
             X_train = features[:,1:-1]
