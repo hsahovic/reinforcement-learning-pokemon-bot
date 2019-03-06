@@ -34,6 +34,10 @@ Once everything is up and running, run
 python3 src/main.py
 ```
 
+This will load a pre-trained model in an instance of `MLRKBattlePlayer` and make it fight a `RandomRandomBattlePlayer`. If you want to watch the actual battle, you can access your local Pokemon Showdown server at `localhost:8000` and enjoy.
+
+You can also run `src/main_training.py` if you want to retrain the model.
+
 Note that the battle might have difficulties to launch itself (due to network unstabilities). If the execution lasts more than 1 minute, start again. We are still working on fixing this issue, please bear with us.
 
 
