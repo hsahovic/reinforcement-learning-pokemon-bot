@@ -66,6 +66,8 @@ class MLRKBattlePlayer(Player):
         self.batch_size = 32
         self.epochs = 3
 
+        self.nb_battles = 0
+
     def battle_to_features(self, battle: Battle):
         # First simple model
             # Pokemons: stats (atk, def, spa, spd, spe), current_hp, max_hp 
@@ -128,13 +130,27 @@ class MLRKBattlePlayer(Player):
             # print('Test accuracy:', score[1])
 
     def fit_from_file(self, file):
+        max_battles = 5
         features = np.loadtxt(open(file + ".csv", "rb"), delimiter=",", skiprows=0)  
         if len(features) > 0:
             X_train = features[:,1:-1]
             Y_train_1d = features[:,-1].astype(np.int32)
             Y_train = np.zeros((len(Y_train_1d), 9))
             Y_train[np.arange(len(Y_train_1d)), Y_train_1d] = 1 # One hot
+            fights = np.unique(features[:,0])
+            # Restrict to max_battles fights
+            if len(fights) > max_battles:
+                for i in range(X_train.shape[0]):
+                    if features[i,0] == fights[max_battles]:
+                        break
+                X_train = X_train[:i,:]
+                Y_train = Y_train[:i,:]  
+            # Evaluate before training
+            score = self.model.evaluate(X_train, Y_train, verbose=0)
+            # Store perf of the model
             self.fit(X_train, Y_train,True)
+            self.nb_battles += min(len(fights), max_battles)
+            self.record_perf(self.nb_battles, score[1], score[0])
 
     def move_to_feature(self, move: Move):
         return np.array([
@@ -160,7 +176,7 @@ class MLRKBattlePlayer(Player):
         X_test = self.battle_to_features(battle)
         Y_pred = self.model.predict(X_test)
         idx = np.argsort(Y_pred[0])[::-1]
-        # shuffle(idx) ##MEF
+        # shuffle(idx) # MEF
         for i in idx:
             if i < len(battle.available_moves): # 4 first neurons for moves
                 to_send = f"/choose move {battle.available_moves[i][0]}"
@@ -173,6 +189,7 @@ class MLRKBattlePlayer(Player):
         return to_send
 
     def reset_weights(self):
+        self.nb_battles = 0
         session = K.get_session()
         for layer in self.model.layers: 
             if hasattr(layer, 'kernel_initializer'):
@@ -183,6 +200,7 @@ class MLRKBattlePlayer(Player):
         with open(title + ".json", "w") as json_file:
             json_file.write(model_json)
         self.model.save_weights(title + ".h5")
+        np.savetxt(title + "_metadata.csv", np.array([self.nb_battles]), delimiter=",", comments="", fmt='%i')
 
     def upload_model(self, source="dense_model"):
         json_file = open(source + '.json', 'r')
@@ -195,6 +213,7 @@ class MLRKBattlePlayer(Player):
             optimizer=keras.optimizers.Adagrad(),
             metrics=['categorical_accuracy']
         )
+        self.nb_battles = np.loadtxt(open(source + "_metadata.csv", "rb"), delimiter=",", skiprows=0)
         
     async def select_move(self, battle: Battle, *, trapped: bool = False):
         choices = [f"/choose switch {i}" for i, ident in battle.available_switches] + [

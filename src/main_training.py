@@ -7,8 +7,9 @@ from environment.utils import CONFIG
 from time import time
 
 import numpy as np
+import matplotlib.pyplot as plt
 
-TARGET_BATTLES = 50
+TARGET_BATTLES = 5
 CONCURRENT_BATTLES = 1
 
 
@@ -38,7 +39,16 @@ async def main():
         ),
     ]
 
+    init = False
+    train = (TARGET_BATTLES == 5)
+
+    if init:
+        players[0].reset_weights()
+        players[0].save_model()
     players[0].upload_model()
+
+    if train:
+        players[0].fit_from_file("inf581_bot_1")
 
     to_await = []
     for player in players:
@@ -49,8 +59,13 @@ async def main():
         await el
 
     print(f"This took {time() - t}s to run.")
+    
+    players[0].save_model() 
+    if not train:
+        with open('perf.csv','ab') as f:
+            np.savetxt(f, np.array([players[0].nb_battles, players[0].victory_rate]).reshape(1,-1), delimiter=",", comments="", fmt='%f')
 
-n = 1
+n = 0
 if __name__ == "__main__":
     for i in range(n):
         print(f"\n{'='*30} STARTING LOOP {i+1} {'='*30}\n")
