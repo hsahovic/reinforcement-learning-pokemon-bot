@@ -328,9 +328,7 @@ class Battle:
 
     @property
     def active_moves(self) -> List[str]:
-        active = [pokemon for pokemon in self._player_team.values() if pokemon.active][
-            0
-        ]
+        active = [pokemon for pokemon in self._player_team.values() if pokemon.active][0]
         return list(active.moves.keys())
 
     @property

@@ -4,7 +4,7 @@ from environment.move import empty_move, Move
 from players.base_classes.player import Player
 
 from pprint import pprint
-from random import choice
+from random import choice, shuffle
 
 # import tensorflow
 import keras
@@ -17,7 +17,7 @@ from keras import activations
 import matplotlib.pyplot as plt
 import numpy as np
 
-class MLRandomBattlePlayer(Player):
+class MLRKBattlePlayer(Player):
     def __init__(
         self,
         username: str,
@@ -32,7 +32,7 @@ class MLRandomBattlePlayer(Player):
         target_battles: int = 5,
         to_target: str = None,
     ) -> None:
-        super(MLRandomBattlePlayer, self).__init__(
+        super(MLRKBattlePlayer, self).__init__(
             authentification_address=authentification_address,
             avatar=avatar,
             format="gen7randombattle",
@@ -64,7 +64,7 @@ class MLRandomBattlePlayer(Player):
         )
         self.model.summary()
         self.batch_size = 32
-        self.epochs = 20
+        self.epochs = 3
 
     def battle_to_features(self, battle: Battle):
         # First simple model
@@ -90,8 +90,6 @@ class MLRandomBattlePlayer(Player):
         
         for pokemon in battle.available_switches_object:
             features = np.concatenate((features, self.pokemon_to_feature(pokemon)))
-
-        print(battle.available_switches_object)
         
         for _ in range(5 - len(battle.available_switches)):
             features = np.concatenate((features, empty_pokemon_feature))
@@ -104,7 +102,7 @@ class MLRandomBattlePlayer(Player):
         
         return features.reshape((1,-1))
 
-    def fit(self, X_train, Y_train, batch_size=32, epochs=10, display=False):
+    def fit(self, X_train, Y_train, batch_size=32, epochs=3, display=False):
         self.batch_size = batch_size
         self.epochs = epochs
         # Train
@@ -128,6 +126,15 @@ class MLRandomBattlePlayer(Player):
             # score = self.model.evaluate(x_test, y_test, verbose=0)
             # print('Test loss:', score[0])
             # print('Test accuracy:', score[1])
+
+    def fit_from_file(self, file):
+        features = np.loadtxt(open(file + ".csv", "rb"), delimiter=",", skiprows=0)  
+        if len(features) > 0:
+            X_train = features[:,1:-1]
+            Y_train_1d = features[:,-1].astype(np.int32)
+            Y_train = np.zeros((len(Y_train_1d), 9))
+            Y_train[np.arange(len(Y_train_1d)), Y_train_1d] = 1 # One hot
+            self.fit(X_train, Y_train,True)
 
     def move_to_feature(self, move: Move):
         return np.array([
@@ -153,13 +160,17 @@ class MLRandomBattlePlayer(Player):
         X_test = self.battle_to_features(battle)
         Y_pred = self.model.predict(X_test)
         idx = np.argsort(Y_pred[0])[::-1]
+        # shuffle(idx) ##MEF
         for i in idx:
             if i < len(battle.available_moves): # 4 first neurons for moves
-                return f"/choose move {battle.available_moves[i][0]}"
-            if 3 < i and i - 4 < len(battle.available_switches): # Neurons 4 to 8 for switches
-                return f"/choose switch {battle.available_switches[i - 4][0]}"
-        print("#### WARNING PREDICT")
-        return None
+                to_send = f"/choose move {battle.available_moves[i][0]}"
+                break
+            elif not battle.trapped and 3 < i and i - 4 < len(battle.available_switches): # Neurons 4 to 8 for switches
+                to_send = f"/choose switch {battle.available_switches[i - 4][0]}"
+                break
+        # print(to_send)
+        self.record_move(int(battle.battle_tag.split('-')[-1]), X_test.flatten(), i)
+        return to_send
 
     def reset_weights(self):
         session = K.get_session()
@@ -179,7 +190,11 @@ class MLRandomBattlePlayer(Player):
         json_file.close()
         self.model = model_from_json(loaded_model_json)
         self.model.load_weights(source + ".h5")
-
+        self.model.compile(
+            loss=keras.losses.binary_crossentropy,
+            optimizer=keras.optimizers.Adagrad(),
+            metrics=['categorical_accuracy']
+        )
         
     async def select_move(self, battle: Battle, *, trapped: bool = False):
         choices = [f"/choose switch {i}" for i, ident in battle.available_switches] + [
