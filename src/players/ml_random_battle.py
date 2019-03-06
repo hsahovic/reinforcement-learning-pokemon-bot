@@ -81,14 +81,13 @@ class ModelManager:
 
         print("Initial battles finished.")
 
-        x = (
-            players[0].winning_moves_data["context"]
-            + players[1].winning_moves_data["context"]
-        )
-        y = (
-            players[0].winning_moves_data["decision"]
-            + players[1].winning_moves_data["decision"]
-        )
+        player_0_winning_moves = players[0].winning_moves_data
+        player_1_winning_moves = players[1].winning_moves_data
+
+        x = player_0_winning_moves.pop('context') + player_1_winning_moves.pop('context')
+        y = player_0_winning_moves.pop('decision') + player_1_winning_moves.pop('decision')
+
+        del players
 
         self.train(x, y)
 
@@ -127,6 +126,7 @@ class ModelManager:
             players = [
                 MLRandomBattlePlayer(
                     authentification_address=CONFIG["authentification_address"],
+                    epsilon = .95,
                     max_concurrent_battles=concurrent_battles,
                     log_messages_in_console=log_messages,
                     mode="challenge",
@@ -139,6 +139,7 @@ class ModelManager:
                 ),
                 MLRandomBattlePlayer(
                     authentification_address=CONFIG["authentification_address"],
+                    epsilon = .95,
                     log_messages_in_console=log_messages,
                     max_concurrent_battles=concurrent_battles,
                     mode="wait",
@@ -168,6 +169,8 @@ class ModelManager:
                 + players[1].winning_moves_data["decision"]
             )
 
+            del players
+
             self.train(x, y)
 
 
@@ -181,6 +184,7 @@ class MLRandomBattlePlayer(Player):
         *,
         authentification_address=None,
         avatar: int = None,
+        epsilon: float = .9,
         log_messages_in_console: bool = False,
         max_concurrent_battles: int = 5,
         server_address: str,
@@ -200,6 +204,7 @@ class MLRandomBattlePlayer(Player):
             to_target=to_target,
             username=username,
         )
+        self.epsilon = epsilon
         self.model_manager = model_manager
 
     async def select_move(self, battle: Battle, *, trapped: bool = False):
@@ -221,7 +226,7 @@ class MLRandomBattlePlayer(Player):
         # The second value refers to using the move as a zmove
         # The third value refers to using the move and mega-evolving
 
-        if np.random.rand() < 0.9:
+        if np.random.rand() < self.epsilon:
             moves_probs, switch_probs = self.model_manager.feed(state)
         else:
             moves_probs, switch_probs = np.random.rand(5, 3), np.random.rand(5)

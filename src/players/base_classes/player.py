@@ -72,6 +72,7 @@ class Player(PlayerNetwork, ABC):
                     self.current_battles += 1
                     self.total_battles += 1
                     self._waiting_start = False
+                    print(f"Battle %4d / %4d started" % (len(self.battles), self.target_battles))
                 # TODO : get opposition team ?
                 current_battle = self.battles[battle_info[2]]
             else:
@@ -122,7 +123,6 @@ class Player(PlayerNetwork, ABC):
             elif split_message[1] == "win":
                 current_battle.won_by(split_message[2])
                 self.current_battles -= 1
-                print(self.total_battles)
                 if self.total_battles == self.target_battles:
                     self.export_recorded_moves()
 

@@ -60,6 +60,7 @@ with open("data/moves.json") as f:
 with open("data/pokedex.json") as f:
     POKEDEX = json.load(f)
 
+
 def data_yielder(data) -> Generator:
     if isinstance(data, int):
         yield data
@@ -82,7 +83,10 @@ def data_yielder(data) -> Generator:
             for foo in data_yielder(el):
                 yield foo
     else:
-        raise ValueError(f'Type {type(data)} (with value {data}) is not compatible with function data_flattener')
+        raise ValueError(
+            f"Type {type(data)} (with value {data}) is not compatible with function data_flattener"
+        )
+
 
 def data_flattener(data) -> list:
     return [el for el in data_yielder(data)]
