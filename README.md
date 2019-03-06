@@ -30,6 +30,8 @@ You need to have a showdown server running on localhost (`node pokemon-showdown`
 
 At this point, we are mainly building a proper OOP environnement before moving on to learning. To launch the current project, run `python3 src/main.py`.
 
+Note that the battle might have difficulties to launch itself (due to network unstabilities). If the execution lasts more than 1 minute, start again. We are still working on fixing this issue, please bear with us.
+
 ## What is implemented
 
 ### Base player classes

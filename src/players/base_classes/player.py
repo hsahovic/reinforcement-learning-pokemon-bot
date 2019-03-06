@@ -47,6 +47,7 @@ class Player(PlayerNetwork, ABC):
         self.battles = {}
 
         self._recorded_moves = {"battle_tag": [], "context": [], "decision": []}
+        self._perf = {"nb_battles": [], "accuracy": [], "loss": [], "victories": []}
 
     async def battle(self, message) -> None:
         messages = message.split("\n")
@@ -124,6 +125,7 @@ class Player(PlayerNetwork, ABC):
                 current_battle.won_by(split_message[2])
                 self.current_battles -= 1
                 if self.total_battles == self.target_battles:
+                    self.export_perf()
                     self.export_recorded_moves()
 
                 await self.leave_battle(current_battle)
@@ -133,11 +135,30 @@ class Player(PlayerNetwork, ABC):
             else:
                 current_battle.parse(split_message)
 
+    def export_perf(self) -> None:
+        # if len(self._perf["victories"]) == 0:
+        #     self._perf['victories'].append(np.array([.5]))
+        self._perf['victories'].append(np.array([self.victory_rate]))
+        # Prepare export array
+        export = []
+        for nb_battles, accuracy, loss, victories in zip(
+            self._perf["nb_battles"], 
+            self._perf["accuracy"], 
+            self._perf["loss"],
+            self._perf["victories"]):
+            export.append(np.concatenate((nb_battles, accuracy, loss, victories)))
+        export = np.array(export, dtype=np.float32)
+        # Save
+        with open(self._username + '_perf.csv','ab') as f:
+            np.savetxt(f, export, delimiter=",", comments="", fmt='%f')
+
     def export_recorded_moves(self) -> None:
+        # Find won battles
         won_battle_tags = []
         for battle in self.battles.values():
             if battle.won:
                 won_battle_tags.append(int(battle.battle_tag.split('-')[-1]))
+        # Prepare export array
         export = []
         for battle_tag, context, decision in zip(
             self._recorded_moves["battle_tag"], 
@@ -146,9 +167,11 @@ class Player(PlayerNetwork, ABC):
             if battle_tag in won_battle_tags:
                 export.append(np.concatenate((battle_tag, context, decision)))
         export = np.array(export, dtype=np.int32)
-        np.savetxt(self._username + ".csv", export, 
-            delimiter=",", comments="", fmt='%i')
-        print(f"PLAYER {self.username}: {len(won_battle_tags)*100/self.target_battles:.1f}% of winnings over {self.target_battles} battles")
+        # Save
+        with open(self._username + '.csv','wb') as f:
+            np.savetxt(f, export, delimiter=",", comments="", fmt='%i')
+        # Print message
+        print(f"PLAYER {self.username}: {self.victory_rate*100:.1f}% of winnings over {self.target_battles} battles")
             
     async def random_move(self, battle: Battle, *, trapped: bool = False) -> None:
         # The state will be stored, but not directly used.
@@ -280,6 +303,11 @@ class Player(PlayerNetwork, ABC):
         self._recorded_moves["context"].append(context)
         self._recorded_moves["decision"].append(np.array([move]))
 
+    def record_perf(self, nb_battles, accuracy, loss) -> None:
+        self._perf["nb_battles"].append(np.array([nb_battles]))
+        self._perf["accuracy"].append(np.array([accuracy]))
+        self._perf["loss"].append(np.array([loss]))
+
     async def run(self) -> None:
         if self.mode == "one_challenge":
             while not self.logged_in:
@@ -328,6 +356,16 @@ class Player(PlayerNetwork, ABC):
                 data["n_move_in_battle"].append(len(battle_data["decision"]))
                 data["battle_won"].append(battle.won)
         return data
+
+    @property
+    def victory_rate(self):
+        victories = 0
+        total = 0
+        for battle in self.battles.values():
+            total += 1
+            if battle.won:
+                victories += 1
+        return victories / total
 
     @property
     def winning_moves_data(self):
