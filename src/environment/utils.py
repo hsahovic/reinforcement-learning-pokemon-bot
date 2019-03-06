@@ -1,6 +1,8 @@
 import json
 import numpy as np
 
+from typing import Generator
+
 CATEGORIES = ["Physical", "Special", "Status"]
 
 CONFIG_PATH = "src/config.json"
@@ -58,29 +60,29 @@ with open("data/moves.json") as f:
 with open("data/pokedex.json") as f:
     POKEDEX = json.load(f)
 
-def data_flattener(data) -> list:
-    if data is None:
-        return [0]
-    elif isinstance(data, int):
-        return [float(data)]
-    elif isinstance(data, float):
-        return [data]
+def data_yielder(data) -> Generator:
+    if isinstance(data, int):
+        yield data
     elif isinstance(data, bool):
-        return [float(data)]
+        yield 1 if data else 0
+    elif data is None:
+        yield 0
+    elif isinstance(data, float):
+        yield data
     elif isinstance(data, dict):
-        to_return = []
         for key in sorted(data.keys()):
-            to_return += data_flattener(data[key])
-        return to_return
+            for el in data_yielder(data[key]):
+                yield el
     elif isinstance(data, list):
-        to_return = []
         for el in data:
-            to_return += data_flattener(el)
-        return to_return
+            for foo in data_yielder(el):
+                yield foo
     elif isinstance(data, tuple):
-        to_return = []
         for el in data:
-            to_return += data_flattener(el)
-        return to_return
+            for foo in data_yielder(el):
+                yield foo
     else:
         raise ValueError(f'Type {type(data)} (with value {data}) is not compatible with function data_flattener')
+
+def data_flattener(data) -> list:
+    return [el for el in data_yielder(data)]

@@ -291,7 +291,6 @@ class Battle:
             for i, move in enumerate(active["moves"]):
                 if "disabled" not in move or not move["disabled"]:
                     self.available_moves.append((i + 1, move))
-                    # self.available_moves.append((i + 1, Move(move["id"])))
             if "canMegaEvo" in active and active["canMegaEvo"]:
                 self.can_mega_evolve = True
             if "canZMove" in active:
@@ -307,8 +306,6 @@ class Battle:
             for i, pokemon in enumerate(side["pokemon"]):
                 if not pokemon["active"] and pokemon["condition"] != "0 fnt":
                     self.available_switches.append((i + 1, pokemon["ident"]))
-                    # self.available_switches.append((i + 1, Pokemon(ident=pokemon["ident"])))
-                    # self.available_switches[-1][1].update_from_request(pokemon)
 
         for pokemon_info in side["pokemon"]:
             pokemon = self._get_pokemon_from_reference(pokemon_info["ident"])
@@ -408,7 +405,15 @@ class Battle:
             if self._player_role == "p1"
             else self.p1_fields,
         }
-        
+
+    @property
+    def is_ready(self) -> bool:
+        return (self._player_role is not None) and self._player_team
+
+    @property
+    def moves_data(self):
+        return self._recorded_moves
+
     @property
     def opp_active_pokemon(self) -> Pokemon:
         for pokemon in self._opponent_team.values():
@@ -423,14 +428,6 @@ class Battle:
             for pokemon in self._player_team.values()
             if not pokemon.active
         ]
-
-    @property
-    def is_ready(self) -> bool:
-        return (self._player_role is not None) and self._player_team
-
-    @property
-    def moves_data(self):
-        return self._recorded_moves
 
     @property
     def turn_sent(self) -> int:

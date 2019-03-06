@@ -84,10 +84,7 @@ class Player(PlayerNetwork, ABC):
                 if split_message[2]:
                     current_battle.update_from_request(json.loads(split_message[2]))
                 if current_battle.is_ready:
-                    # print('yiiiihi')
                     await self.select_move(current_battle)
-                # else:
-                # print("ooooh :'(")
             elif split_message[1] == "callback" and split_message[2] == "trapped":
                 await self.select_move(current_battle, trapped=True)
 
@@ -131,63 +128,96 @@ class Player(PlayerNetwork, ABC):
                 current_battle.parse(split_message)
 
     async def random_move(self, battle: Battle, *, trapped: bool = False) -> None:
+        # The state will be stored, but not directly used.
         state = battle.dic_state
+
+        # Our base ml model generates an array of size 20
+
+        # The 15 first values correspond to move probabilities
+        # The 5 last values correspond to switch probabilities to the pokemon in the 
+        # back, in the same order as they are given in dic_state and battle.player_back
+
+        # The 15 first values are taken by 3 ; the first 4 group of 3 correspond to (up
+        # to) the 4 moves of the active pokemon, as given in the dict state or 
+        # battle.active. The last correspond to struggle or recharge.
+
+        # In each group of three, the first value is the probability of using the move,
+        # with no megaevolution or zmove
+        # The second value refers to using the move as a zmove
+        # The third value refers to using the move and mega-evolving
+
         moves_probs, switch_probs = np.random.rand(5, 3), np.random.rand(5)
 
-        commands = []
+        commands = [] # Will contain the equivalent commands
 
+        # Pokemon species as key, order id as value
         available_switches = {
             battle._player_team[el[1][4:]].species: el[0]
             for el in battle.available_switches
         }
+
+        # Move name as key, order id as value
+        available_moves = {
+            el[1]["id"]: el[0] for el in battle.available_moves if "id" in el[1]
+        }
+
+        # Move names
+        available_z_moves = []
+
+        # TODO : check
+        if battle.can_z_move:
+            for move, can_z in zip(battle.active_moves, battle.can_z_move):
+                if can_z:
+                    available_z_moves.append(move)
+
+
+        # Setting pokemon switches information
         for i, pokemon in enumerate(battle.player_back):
             if pokemon not in available_switches:
                 commands.append("")
                 switch_probs[i] = 0
             else:
                 commands.append(f"/switch {available_switches[pokemon]}")
-        switch_probs[i + 1 :] = 0
 
-        available_moves = {
-            el[1]["id"]: el[0] for el in battle.available_moves if "id" in el[1]
-        }
-        for i, move in enumerate(battle.active_moves):
+        if trapped:
+            switch_probs[:] = 0
+
+        # TODO : check
+        for i in range(len(battle.player_back), 5):
+            commands.append("")
+            switch_probs[i] = 0
+
+        # Setting attacks information
+        for j, move in enumerate(battle.active_moves):
             if move not in available_moves:
                 commands.append("")
                 commands.append("")
                 commands.append("")
-                moves_probs[i, :] = 0
+                moves_probs[j, :] = 0
             else:
-                if not (
-                    battle.can_z_move
-                    and available_moves[move] in battle.can_z_move
-                    and battle.can_z_move[available_moves[move]]
-                ):
-                    moves_probs[i, 1] = 0
+                if move not in available_z_moves:
+                    moves_probs[j, 1] = 0
+                if not battle.can_mega_evolve:
+                    moves_probs[j, 2] = 0
                 commands.append(f"/choose move {available_moves[move]}")
                 commands.append(f"/choose move {available_moves[move]} zmove")
                 commands.append(f"/choose move {available_moves[move]} mega")
 
-        for i in range(i, 3):
-            moves_probs[i, 0] = 0
-            commands.append(f"")
-            commands.append(f"")
-            commands.append(f"")
-        commands.append(f"/choose move struggle")
-        commands.append(f"")
-        commands.append(f"")
-        if "struggle" not in available_moves:
-            moves_probs[4, 0] = 0
-        moves_probs[4, 1:] = 0
+        for i in range(len(battle.active_moves), 4):
+            moves_probs[i, :] = 0
+            commands.append("")
+            commands.append("")
+            commands.append("")
 
-        if not battle.can_mega_evolve:
-            moves_probs[:, 2] = 0
-
+        if "struggle" in available_moves:
+            commands.append(f"/choose move struggle")
+        elif "recharge" in available_moves:
+            commands.append(f"/choose move recharge")
         else:
-            moves_probs[:, 1] = 0
-
-        if trapped:
-            switch_probs[:] = 0
+            moves_probs[4, 0] = 0
+        commands.append("")
+        commands.append("")
+        moves_probs[4, 1:] = 0
 
         probs = []
         for i, p in enumerate(switch_probs):
@@ -206,17 +236,21 @@ class Player(PlayerNetwork, ABC):
             choice = choices([i for i, val in enumerate(probs)], probs)[0]
             battle.record_move(state, choice)
             try:
+                if commands[choice] == "":
+                    raise ValueError('wtf message')
                 await self.send_message(
                     message=commands[choice],
                     message_2=str(battle.turn_sent),
                     room=battle.battle_tag,
                 )
                 return
-            except ValueError:
+            except (ValueError, IndexError) as e:
+                print(e)
                 print(probs)
                 print(commands)
                 print(switch_probs)
                 print(moves_probs)
+                await self.random_move(battle, trapped=trapped)
 
     async def run(self) -> None:
         if self.mode == "one_challenge":
