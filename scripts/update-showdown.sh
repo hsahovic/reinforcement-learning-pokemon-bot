@@ -1,1 +1,1 @@
-sudo cp showdown-corrections/* Pokemon-Showdown/server/
+sudo cp showdown-improvements/* Pokemon-Showdown/server/
