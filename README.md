@@ -28,18 +28,9 @@ We recommend using a Windows Linux Subsystem.
 
 You need to have a showdown server running on localhost (`node pokemon-showdown` in the `Pokemon-Showdown` folder). We recommend modifying it at bit to run things more quickly (try running `sh scripts/update-showdown.sh` ;) - this is actually automatically done during installation if you use our installation scripts).
 
-Once everything is up and running, run
-
-```
-python3 src/main.py
-```
-
-This will load a pre-trained model in an instance of `MLRKBattlePlayer` and make it fight a `RandomRandomBattlePlayer`. If you want to watch the actual battle, you can access your local Pokemon Showdown server at `localhost:8000` and enjoy.
-
-You can also run `src/main_training.py` if you want to retrain the model.
+At this point, we are mainly building a proper OOP environnement before moving on to learning. To launch the current project, run `python3 src/main.py`.
 
 Note that the battle might have difficulties to launch itself (due to network unstabilities). If the execution lasts more than 1 minute, start again. We are still working on fixing this issue, please bear with us.
-
 
 ## What is implemented
 
@@ -61,13 +52,17 @@ This is valid until we create a first working bot. The only exception to this ru
 ### Players
 
 - `RandomRandomBattlePlayer`. A player playing random battles in a random fashion. And it works !
-- `MLRandomBattlePlayer`. Deep RL based on the full state space. Long to train, but can easily be extended. Still a lot of work going on with it !
-- `MLRKBattlePlayer` (reduced kernel). Deep RL based on a reduced set of features. It is giving promising results !
+- `MLRKBattlePlayer`. A first agent based on deep reinforcement learning. It beats the random agent approximately on 2/3 of the battles. 
+
+## TO DO
+- Proper .typechart.json dans utils
+- Environment: nettoyer (repeated moves)
 
 ## Next steps
 
-- Extend our RL algorithms !
-- Improve performance
+- Fix the last environment issues.
+- Improve the existing agent.
+- Try other methods.  
 
 ## Acknowledgements
 

@@ -62,7 +62,6 @@ class PlayerNetwork(ABC):
         await self.send_message(
             f"/trn {self._username},0,{json.loads(log_in_request.text[1:])['assertion']}"
         )
-        self._logged_in = True
 
         # If there is an avatar to select, let's select it !
         if self._avatar:
@@ -115,6 +114,8 @@ class PlayerNetwork(ABC):
 
         # TODO challenge sent
         # updatechallenges means that we received a challenge
+        elif split_message[1] == 'updateuser' and split_message[2] == self.username:
+            self._logged_in = True
         elif "updatechallenges" in split_message[1]:
             response = json.loads(split_message[2])
             for user, format in (
