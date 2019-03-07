@@ -5,7 +5,7 @@ from typing import Generator
 
 CATEGORIES = ["Physical", "Special", "Status"]
 
-CONFIG_PATH = "src/config.json"
+CONFIG_PATH = "config.json"
 with open(CONFIG_PATH) as f:
     CONFIG = json.load(f)
 
