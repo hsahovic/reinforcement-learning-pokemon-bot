@@ -3,13 +3,11 @@ from players.ml_random_battle import ModelManager
 
 
 async def main():
-
-
     model_manager = ModelManager()
-    
+
     # Start from scratch
     # await model_manager.initial_training(
-        # number_of_battles=100, concurrent_battles=20, log_messages=False
+    # number_of_battles=100, concurrent_battles=20, log_messages=False
     # )
 
     # Load latest model
