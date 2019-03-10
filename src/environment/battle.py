@@ -1,9 +1,28 @@
+# -*- coding: utf-8 -*-
+"""
+Battle class. Represents, from a player's perspective, the state of a Pokemon battle.
+
+This file is part of the pokemon showdown reinforcement learning bot project,
+created by Randy Kotti, Ombeline Lagé and Haris Sahovic as part of their
+advanced topics in artifical intelligence course at Ecole Polytechnique.
+
+# TODO:
+- Extend to double battles
+- Expand parsing to take into account all types of messages
+- Check player identity definition and update, especially in _get_pokemon_from_reference
+- Check parse in detail
+- In parse_request, manage ultra boost
+- Parse turn id in parse_request
+"""
+
 from environment.pokemon import empty_pokemon, Pokemon, Move
-from pprint import pprint
-from typing import List, Tuple
+from typing import List
 
 
 class Battle:
+    """
+    Represents the state of a Pokemon battle for a given player.
+    """
 
     ACTIONS_TO_IGNORE = [
         "",
@@ -54,6 +73,7 @@ class Battle:
         "title",
         "upkeep",
     ]
+    """List of str: contain types of messages to ignore while parsing"""
 
     FIELDS = [
         "Aurora Veil",
@@ -66,6 +86,7 @@ class Battle:
         "Tailwind",
         "Toxic Spikes",
     ]
+    """List of str: contain possible fields statuses"""
 
     WEATHERS = [
         "none",
@@ -77,11 +98,25 @@ class Battle:
         "Sandstorm",
         "SunnyDay",
     ]
+    """List of str: contain possible weather statuses"""
 
     def __init__(self, battle_tag: str, player_name: str) -> None:
+        """Battle __init__
+
+        This methods initialises most battle attributes. It records the player's 
+        name and battle tag.
+
+        Args:
+            attle_tag1 (str): The battle tag, as extracted from showdown
+            player_name (str): The battle's player name.
+
+        """
+
+        # Simple pre-formatting
         while battle_tag.endswith("\n"):
             battle_tag = battle_tag[:-1]
 
+        # Teams attributes
         self._player_team = {}
         self._opponent_team = {}
         self._player_team_size = None
@@ -91,41 +126,63 @@ class Battle:
             battle_tag = battle_tag[1:]
         self._battle_tag = battle_tag
 
+        # End of battle attributes
         self._finished = False
         self._winner = None
         self._won = None
 
+        # This is stored for future extension
         self._gametype = None
 
+        # Some basic information on the battle
         self._player_name = player_name
         self._player_role = None
         self._turn = 0
 
+        # Field and weather information
         self._weather = "none"
         self.p1_fields = {field: False for field in self.FIELDS}
         self.p2_fields = {field: False for field in self.FIELDS}
 
-        self.wait = False
+        self._wait = False
 
         self._recorded_moves = {"context": [], "decision": []}
 
-    def _get_pokemon_from_reference(self, message: str) -> Pokemon:
-        # TODO : check that this actually works
-        # message_list = message.split(": ")
-        # player, ident = message_list[0], message_list[1]
-        player, ident = message[:2], message.split(": ")[-1]
+    def _get_pokemon_from_reference(self, reference: str) -> Pokemon:
+        """Returns a pokemon from a reference
+        
+        The player and pokemon are inferred from the reference. If the pokemon is 
+        already created, it is returned. Otherwise, it is added to its player team and
+        then returned.
+
+        Args:
+            reference (str): the reference, as it appears in the message system
+
+        Returns:
+            The Pokemon object corresponding to the reference
+        """
+        player, pokemon_ident = reference[:2], reference.split(": ")[-1]
+
         if (player == self._player_role) or (
             self._player_role is None
         ):  # this is a hack ; apparently it happens on battle init. This needs to be looked into.
-            if ident not in self._player_team:
-                self._player_team[ident] = Pokemon(ident=ident)
-            return self._player_team[ident]
-        else:
-            if ident not in self._opponent_team:
-                self._opponent_team[ident] = Pokemon(ident=ident, opponents=True)
-            return self._opponent_team[ident]
+            if pokemon_ident not in self._player_team:
+                self._player_team[pokemon_ident] = Pokemon(ident=pokemon_ident)
+            return self._player_team[pokemon_ident]
+        elif player is not None:
+            if pokemon_ident not in self._opponent_team:
+                self._opponent_team[pokemon_ident] = Pokemon(
+                    ident=pokemon_ident, opponents=True
+                )
+            return self._opponent_team[pokemon_ident]
 
-    def parse(self, message: List[str]) -> None:
+    def parse_message(self, message: List[str]) -> None:
+        """
+        Update the object from a message
+
+        Args:
+            message (list of str): split message to be parsed
+        """
         if message[1] in self.ACTIONS_TO_IGNORE:
             return
         elif message[1] == "switch":
@@ -262,21 +319,20 @@ class Battle:
         else:
             print("unmanaged battle message:", "|".join(message), self.battle_tag)
 
-    def player_is_p1(self) -> None:
-        self._player_role = "p1"
+    def parse_request(self, request: dict) -> None:
+        """
+        Update the object from a request.
 
-    def player_is_p2(self) -> None:
-        self._player_role = "p2"
+        The player's pokemon are all updated, as well as available moves, switches and
+        other related information (z move, mega evolution, forced switch...).
 
-    def record_move(self, context, move: int) -> None:
-        self._recorded_moves["context"].append(context)
-        self._recorded_moves["decision"].append(move)
-
-    def update_from_request(self, request: dict) -> None:
+        Args:
+            request (dict): parsed json request object
+        """
         if "wait" in request and request["wait"]:
-            self.wait = True
+            self._wait = True
         else:
-            self.wait = False
+            self._wait = False
 
         self.available_moves = []
         self.available_switches = []
@@ -297,9 +353,6 @@ class Battle:
                 self.can_z_move = active["canZMove"]
             if "maybeTrapped" in active:
                 active["maybeTrapped"]
-            if "canUltraBurst" in active:
-                pass
-                # active["canUltraBurst"]  # TODO : check this
 
         side = request["side"]
         if not self.trapped:
@@ -311,69 +364,104 @@ class Battle:
             pokemon = self._get_pokemon_from_reference(pokemon_info["ident"])
             pokemon.update_from_request(pokemon_info)
 
-        request["rqid"]
-        if "forceSwitch" in request:
-            request["forceSwitch"]
-        if "noCancel" in request:
-            request["noCancel"]
-        if "maybeTrapped" in request:
-            request["maybeTrapped"]
-
         self._turn += 1
 
+    def player_is_p1(self) -> None:
+        """
+        Sets the battle's player to p1
+        """
+        self._player_role = "p1"
+
+    def player_is_p2(self) -> None:
+        """
+        Sets the battle's player to p2
+        """
+        self._player_role = "p2"
+
+    def record_move(self, context, move: int) -> None:
+        """
+        Record move information in the battle.
+
+        Args:
+            context (arbitrary): the information regarding the context that led to the
+            move choice that we want to store. From a ML point of view, it corresponds
+            to the input x.
+            move (int): choice id. From a ML point of view, it corresponds to the output
+            y.
+        """
+        self._recorded_moves["context"].append(context)
+        self._recorded_moves["decision"].append(move)
+
     def won_by(self, winner: str) -> None:
+        """
+        Update the battle's winner.
+
+        Args:
+            winner (str): player identifier
+        """
         self._finished = True
         self._winner = winner
         self._won = self._player_name == winner
 
     @property
     def active_moves(self) -> List[str]:
-        active = [pokemon for pokemon in self._player_team.values() if pokemon.active][0]
-        return list(active.moves.keys())
+        """
+        List of str: the active pokemon's moves
+        """
+        active = self.active_pokemon
+        if active:
+            return list(active.moves.keys())
+        else:
+            return []
 
     @property
-    def active_pokemon(self) -> Pokemon:    
+    def active_pokemon(self) -> Pokemon:
+        """
+        Pokemon: the active pokemon, or None
+        """
         for pokemon in self._player_team.values():
             if pokemon.active:
                 return pokemon
         return None
 
     @property
-    def available_moves_object(self) -> Move:
-        moves = []
-        for _, move in self.available_moves:
-            moves.append(Move(move['id']))
-        return moves
+    def available_moves_object(self) -> List[Move]:
+        """
+        List of Move: list of available moves objects
+        """
+        return [Move(move["id"]) for _, move in self.available_moves]
 
     @property
     def available_switches_object(self) -> Pokemon:
-        switches = []
-        for _, ident in self.available_switches:
-            switches.append(self._player_team[ident.split(': ')[-1]])
-        return switches
+        """
+        List of Pokemon: list of available switches as Pokemon objects
+        """
+        return [
+            self._get_pokemon_from_reference(ident)
+            for _, ident in self.available_switches
+        ]
 
     @property
     def battle_tag(self) -> str:
+        """
+        str: battle's battle_tag
+        """
         return self._battle_tag
 
     @property
     def dic_state(self) -> dict:
-        active = [
-            pokemon.dic_state
-            for pokemon in self._player_team.values()
-            if pokemon.active
-        ]
-        opp_active = [
-            pokemon.dic_state
-            for pokemon in self._opponent_team.values()
-            if pokemon.active
-        ]
+        """
+        dict: dictionnary describing the object's state
+        """
+        active = self.active_pokemon
+        opponent_active = self.opponent_active_pokemon
+
         back = [
             pokemon.dic_state
             for pokemon in self._player_team.values()
             if not pokemon.active
         ]
-        opp_back = [
+        opponent_back = [
             pokemon.dic_state
             for pokemon in self._opponent_team.values()
             if not pokemon.active
@@ -382,45 +470,70 @@ class Battle:
         if not active:
             active = empty_pokemon
         else:
-            active = active[0]
-        if not opp_active:
-            opp_active = empty_pokemon
+            active = active.dic_state
+        if not opponent_active:
+            opponent_active = empty_pokemon
         else:
-            opp_active = opp_active[0]
+            opponent_active = opponent_active.dic_state
+
         while len(back) < 5:
             back.append(empty_pokemon)
-        while len(opp_back) < 5:
-            opp_back.append(empty_pokemon)
+        while len(opponent_back) < 5:
+            opponent_back.append(empty_pokemon)
 
         return {
             "active": active,
-            "opp_active": opp_active,
+            "opponent_active": opponent_active,
             "back": back,
-            "opp_back": opp_back,
+            "opponent_back": opponent_back,
             "weather": {weather: self._weather == weather for weather in self.WEATHERS},
             "field": self.p1_fields if self._player_role == "p1" else self.p2_fields,
-            "opp_field": self.p2_fields
+            "opponent_field": self.p2_fields
             if self._player_role == "p1"
             else self.p1_fields,
         }
 
     @property
     def is_ready(self) -> bool:
+        """
+        bool: indicated if the battle is initialised, with an identified player and a
+        team
+        """
         return (self._player_role is not None) and self._player_team
 
     @property
-    def moves_data(self):
+    def moves_data(self) -> dict:
+        """
+        dict: stored moves information
+        """
         return self._recorded_moves
 
     @property
-    def opp_active_pokemon(self) -> Pokemon:
+    def opponent_active_pokemon(self) -> Pokemon:
+        """
+        Pokemon: the opponent's active pokemon, or None
+        """
         for pokemon in self._opponent_team.values():
             if pokemon.active:
                 return pokemon
         return None
 
     @property
+    def opponent_player_back(self) -> List[str]:
+        """
+        List of str: the player's back pokemons' species names
+        """
+        return [
+            pokemon.species
+            for pokemon in self._opponent_team.values()
+            if not pokemon.active
+        ]
+
+    @property
     def player_back(self) -> List[str]:
+        """
+        List of str: the player's back pokemons' species names
+        """
         return [
             pokemon.species
             for pokemon in self._player_team.values()
@@ -429,15 +542,31 @@ class Battle:
 
     @property
     def turn_sent(self) -> int:
+        """
+        int: turn identifier to send when choosing a move
+        """
         return self._turn * 2 + (1 if self._player_role == "p2" else 0)
 
     @property
-    def winning_moves_data(self):
+    def wait(self) -> bool:
+        """
+        bool: indicates if the last requested requiered waiting
+        """
+        return self._wait
+
+    @property
+    def winning_moves_data(self) -> dict:
+        """
+        dict: stored winning moves information
+        """
         if self._won:
             return self.recorded_moves
         else:
             return {"context": [], "decision": []}
 
     @property
-    def won(self):
+    def won(self) -> bool:
+        """
+        bool: indicates if the battle was won by the player
+        """
         return self._won

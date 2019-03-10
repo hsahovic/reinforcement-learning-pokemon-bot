@@ -86,7 +86,7 @@ class Player(PlayerNetwork, ABC):
             # Send move
             if split_message[1] == "request":
                 if split_message[2]:
-                    current_battle.update_from_request(json.loads(split_message[2]))
+                    current_battle.parse_request(json.loads(split_message[2]))
                 if current_battle.is_ready:
                     await self.select_move(current_battle)
             elif split_message[1] == "callback" and split_message[2] == "trapped":
@@ -133,7 +133,7 @@ class Player(PlayerNetwork, ABC):
                 if current_battle.is_ready:
                     await self.select_move(current_battle)
             else:
-                current_battle.parse(split_message)
+                current_battle.parse_message(split_message)
 
     def export_perf(self) -> None:
         # if len(self._perf["victories"]) == 0:

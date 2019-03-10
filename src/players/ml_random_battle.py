@@ -120,7 +120,7 @@ class ModelManager:
         iterations=5,
         number_of_battles=100,
         concurrent_battles=100,
-        log_messages=False,
+        log_messages=True,
     ):
         for i in range(iterations):
             players = [
