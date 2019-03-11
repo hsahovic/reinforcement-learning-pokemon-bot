@@ -1,9 +1,9 @@
 import asyncio
-from players.ml_random_battle import ModelManager
+from players.fully_connected_random_model import FullyConnectedRandomModel
 
 
 async def main():
-    model_manager = ModelManager()
+    model_manager = FullyConnectedRandomModel()
 
     # Start from scratch
     # await model_manager.initial_training(

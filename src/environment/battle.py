@@ -108,8 +108,8 @@ class Battle:
 
         Args:
             attle_tag1 (str): The battle tag, as extracted from showdown
+            
             player_name (str): The battle's player name.
-
         """
 
         # Simple pre-formatting
@@ -386,6 +386,7 @@ class Battle:
             context (arbitrary): the information regarding the context that led to the
             move choice that we want to store. From a ML point of view, it corresponds
             to the input x.
+            
             move (int): choice id. From a ML point of view, it corresponds to the output
             y.
         """
