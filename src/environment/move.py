@@ -1,3 +1,17 @@
+# -*- coding: utf-8 -*-
+"""
+Move class. Represents a move, usually associated with a pokemon.
+
+This file is part of the pokemon showdown reinforcement learning bot project,
+created by Randy Kotti, Ombeline Lagé and Haris Sahovic as part of their
+advanced topics in artifical intelligence course at Ecole Polytechnique.
+
+TODO:
+- PP Management
+- Flags management
+- Hidden power type
+- ZMove effects
+"""
 from environment.utils import CATEGORIES, MOVES, TARGETS, TYPES, SECONDARIES
 
 
@@ -58,14 +72,27 @@ empty_move = {
     "z_power": 0,
     "z_effect": False,
 }
-
+"""This dictionnary is used inplace of unknown moves"""
 
 class Move:
-    def __init__(self, move) -> None:
+    """
+    Represents a move.
+    """
+    def __init__(self, move:str) -> None:
+        """
+        Move initialisation
+
+        Args:
+            move (str): the move name, that will be looked up in the move database
+        """
+        # Small name reformatting: we get rid of special characters
         move = "".join([char for char in move if char not in "-' "])
+
+        # Hiddenpower is a special case
         if move.startswith("hiddenpower") and move[-1] in "0123456789":
             move = move[:-2]
 
+        # Z-Move can sometimes be an issue
         if move not in MOVES and move.startswith("z"):
             raise ZMoveException
 
@@ -80,10 +107,11 @@ class Move:
         if self.category not in CATEGORIES:
             print("category", self.category)
         self.max_pp = MOVES[move]["pp"]
-        # TODO : add pp management ?
         self.priority = MOVES[move]["priority"]
-        # TODO right now we can ignore flags
         self.flags = MOVES[move]["flags"]
+
+        # Boosts are stored as tuples; the first value corresponds to the boost degree (
+        # +1, -3...) and the second to the corresponding probability
         self.boosts = {
             "tox": (0, 0),
             "psn": (0, 0),
@@ -130,7 +158,6 @@ class Move:
         self.target = MOVES[move]["target"]
         if self.target not in TARGETS:
             print("target", self.target)
-        # TODO
         self.type = MOVES[move]["type"].lower()
         if self.type not in TYPES:
             print("type", self.type)
@@ -155,17 +182,24 @@ class Move:
             self.z_power = MOVES[move]["zMovePower"]
         else:
             self.z_power = 0
-        # TODO : proper z move effect management
         if "zMoveEffect" in MOVES[move]:
             self.z_effect = True
         else:
             self.z_effect = False
 
     def __repr__(self) -> str:
+        """
+        String representation of the Move, in the form "Move object: name"
+        """
         return f"Move object: {self.name}"
 
-    def add_secondary(self, effect):
-        self.name
+    def add_secondary(self, effect:dict) -> None:
+        """
+        Add a secondary effect.
+
+        Arg:
+            effect (dict): dictionnary describing the effect, from the move database
+        """
         if "boosts" in effect:
             for stat, val in effect["boosts"].items():
                 if stat not in self.boosts:
@@ -196,6 +230,9 @@ class Move:
 
     @property
     def dic_state(self) -> dict:
+        """
+        dict: dictionnary describing the object's state
+        """
         return {
             "accuracy": self.accuracy,
             "auto_boosts": self.auto_boosts,
@@ -217,4 +254,7 @@ class Move:
 
 
 class ZMoveException(Exception):
+    """
+    Exception raised when a Move class is instantiated from a ZMove
+    """
     pass

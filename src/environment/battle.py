@@ -6,7 +6,7 @@ This file is part of the pokemon showdown reinforcement learning bot project,
 created by Randy Kotti, Ombeline Lagé and Haris Sahovic as part of their
 advanced topics in artifical intelligence course at Ecole Polytechnique.
 
-# TODO:
+TODO:
 - Extend to double battles
 - Expand parsing to take into account all types of messages
 - Check player identity definition and update, especially in _get_pokemon_from_reference

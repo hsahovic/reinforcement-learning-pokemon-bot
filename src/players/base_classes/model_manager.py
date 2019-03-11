@@ -198,8 +198,8 @@ class ModelManager(ABC):
         for i, val in enumerate(y):
             y_t[i, val] = 1
         self.model.fit(x, y_t, epochs=3, batch_size=64)
-        self.model.save(["models", self.MODEL_NAME, f"{time.time()}.model"])
-
+        self.model.save(os.path.join("models", self.MODEL_NAME, f"{time.time()}.model"))
+        
     async def self_training(
         self,
         iterations=5,
