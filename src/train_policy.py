@@ -1,9 +1,9 @@
 import asyncio
-from players.fully_connected_random_model import FullyConnectedRandomModel
+from players.policy_network import PolicyNetwork
 
 
 async def main():
-    model_manager = FullyConnectedRandomModel()
+    model_manager = PolicyNetwork()
 
     # Start from scratch
     # await model_manager.initial_training(
@@ -13,7 +13,7 @@ async def main():
     # Load latest model
     # model_manager.load()
     await model_manager.self_training(
-        number_of_battles=3, concurrent_battles=3, log_messages=False, iterations=2
+        number_of_battles=1, concurrent_battles=1, log_messages=False, iterations=20
     )
 
 

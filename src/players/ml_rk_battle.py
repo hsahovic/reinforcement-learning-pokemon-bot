@@ -230,3 +230,4 @@ class MLRKBattlePlayer(Player):
             await self.send_message(
                 message=to_send, message_2=str(turn), room=battle.battle_tag
             )
+            return to_send 

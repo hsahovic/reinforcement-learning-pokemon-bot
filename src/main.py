@@ -18,7 +18,7 @@ async def main():
         MLRKBattlePlayer(
             authentification_address=CONFIG["authentification_address"],
             max_concurrent_battles=CONCURRENT_BATTLES,
-            log_messages_in_console=False,
+            log_messages_in_console=True,
             mode="challenge",
             password=CONFIG["users"][0]["password"],
             server_address=CONFIG["local_adress"],
@@ -28,7 +28,7 @@ async def main():
         ),
         RandomRandomBattlePlayer(
             authentification_address=CONFIG["authentification_address"],
-            log_messages_in_console=False,
+            log_messages_in_console=True,
             max_concurrent_battles=CONCURRENT_BATTLES,
             mode="wait",
             password=CONFIG["users"][1]["password"],

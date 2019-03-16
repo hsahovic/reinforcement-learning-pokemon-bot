@@ -46,8 +46,12 @@ class Player(PlayerNetwork, ABC):
 
         self.battles = {}
 
-        self._recorded_moves = {"battle_tag": [], "context": [], "decision": []}
-        self._perf = {"nb_battles": [], "accuracy": [], "loss": [], "victories": []}
+        # self._recorded_moves = {"battle_tag": [], "context": [], "decision": []}
+        # self._perf = {"nb_battles": [], "accuracy": [], "loss": [], "victories": []}
+
+        self._observations = {}
+        self._actions = {}
+        self._wins = {}
 
     async def battle(self, message) -> None:
         messages = message.split("\n")
@@ -73,7 +77,8 @@ class Player(PlayerNetwork, ABC):
                     self.current_battles += 1
                     self.total_battles += 1
                     self._waiting_start = False
-                    print(f"Battle %4d / %4d started" % (len(self.battles), self.target_battles))
+                    if "2" in self.username.lower():
+                        print(f"Battle %3d / %3d started" % (len(self.battles), self.target_battles))
                 # TODO : get opposition team ?
                 current_battle = self.battles[battle_info[2]]
             else:
@@ -88,9 +93,9 @@ class Player(PlayerNetwork, ABC):
                 if split_message[2]:
                     current_battle.parse_request(json.loads(split_message[2]))
                 if current_battle.is_ready:
-                    await self.select_move(current_battle)
+                    await self.select_save_move(current_battle)
             elif split_message[1] == "callback" and split_message[2] == "trapped":
-                await self.select_move(current_battle, trapped=True)
+                await self.select_save_move(current_battle, trapped=True)
 
             elif split_message[1] == "error":
                 if split_message[2].startswith(
@@ -103,9 +108,9 @@ class Player(PlayerNetwork, ABC):
                     pass
                 elif split_message[2].startswith("[Invalid choice] Can't switch"):
                     current_battle.trapped = True
-                    await self.select_move(current_battle)
+                    await self.select_save_move(current_battle)
                 elif split_message[2].startswith("[Invalid choice]"):
-                    await self.select_move(current_battle)
+                    await self.select_save_move(current_battle)
 
             # Update player id and turn count
             elif (
@@ -119,60 +124,73 @@ class Player(PlayerNetwork, ABC):
                     current_battle.player_is_p1()
 
                 if current_battle.is_ready:
-                    await self.select_move(current_battle)
+                    await self.select_save_move(current_battle)
 
             elif split_message[1] == "win":
                 current_battle.won_by(split_message[2])
+                # self._observations[current_battle.battle_num].append(current_battle.dic_state)
+                # self._actions[current_battle.battle_num].append("/end " + str(int(self.username.lower() == split_message[2])) + "|")
+                self._wins[current_battle.battle_num] = int(self.username.lower() == split_message[2])
                 self.current_battles -= 1
-                if self.total_battles == self.target_battles:
-                    self.export_perf()
-                    self.export_recorded_moves()
+                # if self.total_battles == self.target_battles:
+                #     self.export_perf()
+                #     self.export_recorded_moves()
 
                 await self.leave_battle(current_battle)
             elif split_message[1] == "turn":
                 if current_battle.is_ready:
-                    await self.select_move(current_battle)
+                    await self.select_save_move(current_battle)
             else:
                 current_battle.parse_message(split_message)
 
-    def export_perf(self) -> None:
-        # if len(self._perf["victories"]) == 0:
-        #     self._perf['victories'].append(np.array([.5]))
-        self._perf['victories'].append(np.array([self.victory_rate]))
-        # Prepare export array
-        export = []
-        for nb_battles, accuracy, loss, victories in zip(
-            self._perf["nb_battles"], 
-            self._perf["accuracy"], 
-            self._perf["loss"],
-            self._perf["victories"]):
-            export.append(np.concatenate((nb_battles, accuracy, loss, victories)))
-        export = np.array(export, dtype=np.float32)
-        # Save
-        with open(self._username + '_perf.csv','ab') as f:
-            np.savetxt(f, export, delimiter=",", comments="", fmt='%f')
+    # def export_perf(self) -> None:
+    #     # if len(self._perf["victories"]) == 0:
+    #     #     self._perf['victories'].append(np.array([.5]))
+    #     self._perf['victories'].append(np.array([self.victory_rate]))
+    #     # Prepare export array
+    #     export = []
+    #     for nb_battles, accuracy, loss, victories in zip(
+    #         self._perf["nb_battles"], 
+    #         self._perf["accuracy"], 
+    #         self._perf["loss"],
+    #         self._perf["victories"]):
+    #         export.append(np.concatenate((nb_battles, accuracy, loss, victories)))
+    #     export = np.array(export, dtype=np.float32)
+    #     # Save
+    #     with open(self._username + '_perf.csv','ab') as f:
+    #         np.savetxt(f, export, delimiter=",", comments="", fmt='%f')
 
-    def export_recorded_moves(self) -> None:
-        # Find won battles
-        won_battle_tags = []
-        for battle in self.battles.values():
-            if battle.won:
-                won_battle_tags.append(int(battle.battle_tag.split('-')[-1]))
-        # Prepare export array
-        export = []
-        for battle_tag, context, decision in zip(
-            self._recorded_moves["battle_tag"], 
-            self._recorded_moves["context"], 
-            self._recorded_moves["decision"]):
-            if battle_tag in won_battle_tags:
-                export.append(np.concatenate((battle_tag, context, decision)))
-        export = np.array(export, dtype=np.int32)
-        # Save
-        with open(self._username + '.csv','wb') as f:
-            np.savetxt(f, export, delimiter=",", comments="", fmt='%i')
-        # Print message
-        print(f"PLAYER {self.username}: {self.victory_rate*100:.1f}% of winnings over {self.target_battles} battles")
+    # def export_recorded_moves(self) -> None:
+    #     # Find won battles
+    #     won_battle_tags = []
+    #     for battle in self.battles.values():
+    #         if battle.won:
+    #             won_battle_tags.append(int(battle.battle_tag.split('-')[-1]))
+    #     # Prepare export array
+    #     export = []
+    #     for battle_tag, context, decision in zip(
+    #         self._recorded_moves["battle_tag"], 
+    #         self._recorded_moves["context"], 
+    #         self._recorded_moves["decision"]):
+    #         if battle_tag in won_battle_tags:
+    #             export.append(np.concatenate((battle_tag, context, decision)))
+    #     export = np.array(export, dtype=np.int32)
+    #     # Save
+    #     with open(self._username + '.csv','wb') as f:
+    #         np.savetxt(f, export, delimiter=",", comments="", fmt='%i')
+    #     # Print message
+    #     print(f"PLAYER {self.username}: {self.victory_rate*100:.1f}% of winnings over {self.target_battles} battles")
             
+
+    async def select_save_move(self, battle: Battle, *, trapped: bool = False) -> None:
+        if battle.battle_num not in self._observations.keys():
+            self._observations[battle.battle_num] = []
+            self._actions[battle.battle_num] = []
+        self._observations[battle.battle_num].append(battle.dic_state)
+        action = await self.select_move(battle, trapped=trapped)
+        self._actions[battle.battle_num].append(action)
+
+
     async def random_move(self, battle: Battle, *, trapped: bool = False) -> None:
         # The state will be stored, but not directly used.
         state = battle.dic_state
@@ -280,7 +298,7 @@ class Player(PlayerNetwork, ABC):
         if sum(probs):
             probs /= sum(probs)
             choice = choices([i for i, val in enumerate(probs)], probs)[0]
-            battle.record_move(state, choice)
+            # battle.record_move(state, choice)
             try:
                 if commands[choice] == "":
                     raise ValueError('wtf message')
@@ -289,7 +307,8 @@ class Player(PlayerNetwork, ABC):
                     message_2=str(battle.turn_sent),
                     room=battle.battle_tag,
                 )
-                return
+                return commands[choice]
+                
             except (ValueError, IndexError) as e:
                 print(e)
                 print(probs)
@@ -298,15 +317,15 @@ class Player(PlayerNetwork, ABC):
                 print(moves_probs)
                 await self.random_move(battle, trapped=trapped)
 
-    def record_move(self, battle_tag, context, move: int) -> None:
-        self._recorded_moves["battle_tag"].append(np.array([battle_tag]))
-        self._recorded_moves["context"].append(context)
-        self._recorded_moves["decision"].append(np.array([move]))
+    # def record_move(self, battle_tag, context, move: int) -> None:
+    #     self._recorded_moves["battle_tag"].append(np.array([battle_tag]))
+    #     self._recorded_moves["context"].append(context)
+    #     self._recorded_moves["decision"].append(np.array([move]))
 
-    def record_perf(self, nb_battles, accuracy, loss) -> None:
-        self._perf["nb_battles"].append(np.array([nb_battles]))
-        self._perf["accuracy"].append(np.array([accuracy]))
-        self._perf["loss"].append(np.array([loss]))
+    # def record_perf(self, nb_battles, accuracy, loss) -> None:
+    #     self._perf["nb_battles"].append(np.array([nb_battles]))
+    #     self._perf["accuracy"].append(np.array([accuracy]))
+    #     self._perf["loss"].append(np.array([loss]))
 
     async def run(self) -> None:
         if self.mode == "one_challenge":
@@ -329,8 +348,12 @@ class Player(PlayerNetwork, ABC):
             )
 
     @abstractmethod
-    def select_move(self, battle: Battle, *, trapped: bool = False) -> None:
+    def select_move(self, battle: Battle, *, trapped: bool = False) -> str:
         pass
+
+    @property
+    def actions(self):
+        return self._actions
 
     @property
     def can_accept_challenge(self) -> bool:
@@ -345,37 +368,46 @@ class Player(PlayerNetwork, ABC):
             self.total_battles == self.target_battles and self.current_battles == 0
         )
 
-    @property
-    def moves_data(self):
-        data = {"context": [], "decision": [], "n_move_in_battle": [], "battle_won": []}
-        for battle in self.battles.values():
-            battle_data = battle.moves_data
-            for context, move in zip(battle_data["context"], battle_data["decision"]):
-                data["context"].append(context)
-                data["decision"].append(move)
-                data["n_move_in_battle"].append(len(battle_data["decision"]))
-                data["battle_won"].append(battle.won)
-        return data
+    # @property
+    # def moves_data(self):
+    #     data = {"context": [], "decision": [], "n_move_in_battle": [], "battle_won": []}
+    #     for battle in self.battles.values():
+    #         battle_data = battle.moves_data
+    #         for context, move in zip(battle_data["context"], battle_data["decision"]):
+    #             data["context"].append(context)
+    #             data["decision"].append(move)
+    #             data["n_move_in_battle"].append(len(battle_data["decision"]))
+    #             data["battle_won"].append(battle.won)
+    #     return data
 
     @property
-    def victory_rate(self):
-        victories = 0
-        total = 0
-        for battle in self.battles.values():
-            total += 1
-            if battle.won:
-                victories += 1
-        return victories / total
+    def observations(self):
+        return self._observations
+
+    # @property
+    # def victory_rate(self):
+    #     victories = 0
+    #     total = 0
+    #     for battle in self.battles.values():
+    #         total += 1
+    #         if battle.won:
+    #             victories += 1
+    #     return victories / total
 
     @property
     def winning_moves_data(self):
-        data = {"context": [], "decision": [], "n_move_in_battle": []}
-        for battle in self.battles.values():
-            if not battle.won:
-                continue
-            battle_data = battle.moves_data
-            for context, move in zip(battle_data["context"], battle_data["decision"]):
-                data["context"].append(context)
-                data["decision"].append(move)
-                data["n_move_in_battle"].append(len(battle_data["decision"]))
+        data = {"observation": [], "action": []}
+        for battle_id in self.wins.keys():
+            if self.wins[battle_id]:
+                for observation, action in zip(self.observations[battle_id], self.actions[battle_id]):
+                    data["observation"].append(observation)
+                    data["action"].append(action)
         return data
+        
+    @property
+    def wins(self):
+        return self._wins
+
+    @property
+    def winning_rate(self):
+        return sum(self._wins.values())/len(self._wins.values())

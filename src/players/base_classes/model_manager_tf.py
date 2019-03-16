@@ -16,15 +16,16 @@ from abc import ABC, abstractmethod
 from random import choices
 from typing import Tuple
 
-from keras.models import load_model
+import tensorflow as tf
 
 import asyncio
 import numpy as np
 import os
 import time
 
+import matplotlib.pyplot as plt
 
-class ModelManager(ABC):
+class ModelManagerTF(ABC):
 
     MODEL_NAME = None
 
@@ -47,7 +48,7 @@ class ModelManager(ABC):
             moves_predictions (np.array(5,3)), switch_predictions(np.array(5))
         """
         x = self.format_x(x)
-        preds = self.model.predict(np.array([x]))[0]
+        preds = self.predict(np.array([x]))[0]
         return preds[:15].reshape((5, 3)), preds[-5:]
 
     @abstractmethod
@@ -110,49 +111,44 @@ class ModelManager(ABC):
             await el
 
         print("Initial battles finished.")
-
-        player_0_winning_moves = players[0].winning_moves_data
-        player_1_winning_moves = players[1].winning_moves_data
-
-        x = player_0_winning_moves.pop("observation") + player_1_winning_moves.pop(
-            "observation"
-        )
-        y = player_0_winning_moves.pop("action") + player_1_winning_moves.pop(
-            "action"
-        )
+        
+        for player in players:
+            self.train(
+                player.observations,
+                player.actions,
+                player.wins
+            )
 
         del players
 
-        self.train(x, y)
+    # def load(self, name=None) -> None:
+    #     """
+    #     Loads a model.
 
-    def load(self, name=None) -> None:
-        """
-        Loads a model.
+    #     If a name is given, it will be fetched in the models directory.
+    #     Otherwise, the last model will be loaded.
 
-        If a name is given, it will be fetched in the models directory.
-        Otherwise, the last model will be loaded.
-
-        Args:
-            name (str, defaults to None): name of the model to be loaded. If None, the 
-            last saved model will be used.
-        """
-        if self.MODEL_NAME is None:
-            raise ValueError(
-                """self.MODEL_NAME is None. Are you sure you initialised your 
-            model with a name attribute ?
-        """
-            )
-        if name:
-            if not os.path.isdir(os.path.join("models", self.MODEL_NAME)):
-                raise ValueError("No models to load were found.")
-            else:
-                self.model = load_model(os.path.join("models", self.MODEL_NAME, name))
-        else:
-            models = os.listdir(os.path.join("models", self.MODEL_NAME))
-            if models:
-                self.load(sorted(models)[-1])
-            else:
-                raise ValueError("No models to load were found.")
+    #     Args:
+    #         name (str, defaults to None): name of the model to be loaded. If None, the 
+    #         last saved model will be used.
+    #     """
+    #     if self.MODEL_NAME is None:
+    #         raise ValueError(
+    #             """self.MODEL_NAME is None. Are you sure you initialised your 
+    #         model with a name attribute ?
+    #     """
+    #         )
+    #     if name:
+    #         if not os.path.isdir(os.path.join("models", self.MODEL_NAME)):
+    #             raise ValueError("No models to load were found.")
+    #         else:
+    #             self.model = load_model(os.path.join("models", self.MODEL_NAME, name))
+    #     else:
+    #         models = os.listdir(os.path.join("models", self.MODEL_NAME))
+    #         if models:
+    #             self.load(sorted(models)[-1])
+    #         else:
+    #             raise ValueError("No models to load were found.")
 
     def get_player(
         self,
@@ -187,28 +183,54 @@ class ModelManager(ABC):
             to_target=to_target,
         )
 
-    def train(self, x, y: int) -> None:
+    # def train(self, x, y: int) -> None:
+    #     """
+    #     Trains the model on x, y.
+
+    #     Args:
+    #         x: raw input data to be used with self.format
+
+    #         y: move choices, as integers
+    #     """
+    #     x = np.array([self.format_x(el) for el in x])
+    #     y_t = np.zeros(shape=(len(y), 20))
+    #     for i, val in enumerate(y):
+    #         y_t[i, val] = 1
+    #     self.model.fit(x, y_t, epochs=3, batch_size=64) # validation_split=.1
+    #     if not os.path.isdir(os.path.join("models", self.MODEL_NAME)):
+    #         os.makedirs(os.path.join("models", self.MODEL_NAME))
+    #     self.model.save(os.path.join("models", self.MODEL_NAME, f"{time.time()}.model"))
+
+    @abstractmethod
+    def predict(self, x):
         """
-        Trains the model on x, y.
+        Predicts action probabilities given environment features x
+        You should rewrite this method when inherited.
 
         Args:
-            x: raw input data to be used with self.format
+            x : already transformed features
 
-            y: move choices, as integers
+        Returns:
+            y : array of probabilities for actions
         """
-        x = np.array([self.format_x(el) for el in x])
-        y_t = np.zeros(shape=(len(y), 20))
-        for i, val in enumerate(y):
-            y_t[i, val] = 1
-        self.model.fit(x, y_t, epochs=3, batch_size=64) # validation_split=.1
-        if not os.path.isdir(os.path.join("models", self.MODEL_NAME)):
-            os.makedirs(os.path.join("models", self.MODEL_NAME))
-        self.model.save(os.path.join("models", self.MODEL_NAME, f"{time.time()}.model"))
+        pass
+
+    @abstractmethod
+    def train(self, observations, actions, wins) -> None:
+        """
+        Trains the model on observations, actions, wins.
+
+        Args:
+            observations: raw input data to be used with self.format
+
+            actions: move choices, as str
+        """
+        pass
 
     async def test(
         self,
         number_of_battles=50,
-        concurrent_battles=10,
+        concurrent_battles=5,
         log_messages=False,
         opponent = "random"
     ):
@@ -284,7 +306,14 @@ class ModelManager(ABC):
 
             log_messages (bool, defaults to True): wheter to log battles messages
         """
+        perf_record = []
+        print(f"\n{'='*10} STARTING LOOP {'='*10}\n")
+        print(f"{'-'*10} Testing {'-'*10}")
+        perf = await self.test(number_of_battles=20)
+        perf_record.append(perf)
+        print(f"\n{'*'*15} Performance: {perf*100:2.1f}% {'*'*15}\n")
         for i in range(iterations):
+            print(f"\n{'='*10} STARTING ITERATION {i+1} {'='*10}\n")
             players = [
                 self.get_player(
                     authentification_address=CONFIG["authentification_address"],
@@ -315,28 +344,32 @@ class ModelManager(ABC):
                 to_await.append(asyncio.ensure_future(player.listen()))
                 to_await.append(asyncio.ensure_future(player.run()))
 
+            print(f"{'-'*10} Fighting {'-'*10}")
             for el in to_await:
                 await el
 
-            print(f"Round {i + 1} out of {iterations} of self training finished.")
-            perf = await self.test()
-            print(f"Performance: {perf}")
-
-            x = (
-                players[0].winning_moves_data["observation"]
-                + players[1].winning_moves_data["observation"]
-            )
-            y = (
-                players[0].winning_moves_data["action"]
-                + players[1].winning_moves_data["action"]
-            )
-
-            b = list(players[0].observations.keys())[0]
-            print(players[0].observations[b][26])
+            print(f"{'-'*10} Training {'-'*10}")
+            for player in players:
+                self.train(
+                    player.observations,
+                    player.actions,
+                    player.wins
+                )
+            
+            print(f"{'-'*10} Testing {'-'*10}")
+            perf = await self.test(number_of_battles=20)
+            perf_record.append(perf)
+            print(f"\n{'*'*15} Performance: {perf*100:2.1f}% {'*'*15}\n")
 
             del players
 
-            self.train(x, y)
+        plt.plot(range(iterations+1), perf_record)
+        plt.xlim([0, iterations])
+        plt.ylim([0,1])
+        plt.xlabel("Number of iterations")
+        plt.ylabel("Performance")
+        plt.savefig("perf.png")
+        plt.show()
 
 
 class _MLRandomBattlePlayer(Player):
@@ -345,7 +378,7 @@ class _MLRandomBattlePlayer(Player):
         username: str,
         password: str,
         mode: str,
-        model_manager: ModelManager,
+        model_manager: ModelManagerTF,
         *,
         authentification_address=None,
         avatar: int = None,
@@ -480,7 +513,6 @@ class _MLRandomBattlePlayer(Player):
         if sum(probs):
             probs /= sum(probs)
             choice = choices([i for i, val in enumerate(probs)], probs)[0]
-            # battle.record_move(state, choice)
             try:
                 if commands[choice] == "":
                     raise ValueError("wtf message")
