@@ -57,6 +57,9 @@ This is valid until we create a first working bot. The only exception to this ru
 ## TO DO
 - Proper .typechart.json dans utils
 - Environment: nettoyer (repeated moves)
+- Load/Save TF model
+- Update reward function
+- Unify model manager tf / keras
 
 ## Next steps
 
