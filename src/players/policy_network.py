@@ -12,13 +12,10 @@ from players.base_classes.model_manager_tf import ModelManagerTF
 import tensorflow as tf
 import numpy as np
 
-H = 195  # Horizon
-g = 0.99
-alpha = 0.01  # Initial learning rate
-beta = 0.0005  # Target learning rate
-delta = 0.99  # Learning rate decay
-n_episode = 700
-sliding_window = 100
+g = 0.99 # discount factor for rewards
+alpha = 0.005  # Initial learning rate
+beta = 0.0001  # Target learning rate
+delta = 0.97  # Learning rate decay
 
 
 class PolicyNetwork(ModelManagerTF):
@@ -36,7 +33,7 @@ class PolicyNetwork(ModelManagerTF):
         This defines a fully connected NN going from processed features to a 
         hidden layer of size ???, and then an ouput.
         """
-        self.n_features = 4*2 + 8 + 5*8 + 8 # Moves + current pokemon 
+        self.n_features = 4*3 + 9 + 5*9 + 9 # Moves + current pokemon 
                                             # + Other pokemons in hand
                                             # + 1 Opponent pokemon 
 
@@ -61,7 +58,7 @@ class PolicyNetwork(ModelManagerTF):
         # Hidden layer (l1)
         layer = tf.layers.dense(
             inputs=self.tf_obs,
-            units=33,
+            units=50,
             activation=tf.nn.tanh,  # tanh activation
             kernel_initializer=tf.random_normal_initializer(
                 mean=0, stddev=0.3),
@@ -94,30 +91,29 @@ class PolicyNetwork(ModelManagerTF):
         self.train_step = tf.train.AdamOptimizer(
             self.tf_learning_rate).minimize(self.loss)
 
-        # # Value learning
-        # # Linear Layer (head)
-        # self.value_layer = tf.layers.dense(
-        #     inputs=layer,
-        #     units=1,
-        #     activation=None,
-        #     kernel_initializer=tf.random_normal_initializer(
-        #         mean=0, stddev=0.3),
-        #     use_bias=False,
-        #     # bias_initializer=tf.constant_initializer(0.1),
-        #     name='value_layer'
-        # )
-        # self.predicted_value = tf.squeeze(self.value_layer)
+        # Value learning
+        # Linear Layer (head)
+        self.value_layer = tf.layers.dense(
+            inputs=layer,
+            units=1,
+            activation=None,
+            kernel_initializer=tf.random_normal_initializer(
+                mean=0, stddev=0.3),
+            use_bias=False,
+            name='value_layer'
+        )
+        self.predicted_value = tf.squeeze(self.value_layer)
 
-        # # Loss function
-        # self.tf_target = tf.placeholder(tf.float32, name="target")
-        # self.loss_value = tf.losses.mean_squared_error(
-        #     labels=self.tf_target,
-        #     predictions=self.predicted_value
-        #     )
+        # Loss function
+        self.tf_target = tf.placeholder(tf.float32, name="target")
+        self.loss_value = tf.losses.mean_squared_error(
+            labels=self.tf_target,
+            predictions=self.predicted_value
+            )
 
-        # # Train step
-        # self.train_step_value = tf.train.AdamOptimizer(
-        #     self.tf_learning_rate).minimize(self.loss_value)
+        # Train step
+        self.train_step_value = tf.train.AdamOptimizer(
+            self.tf_learning_rate).minimize(self.loss_value)
 
     def format_x(self, state: dict):
         """
@@ -141,12 +137,25 @@ class PolicyNetwork(ModelManagerTF):
 
 
     def move_to_feature(self, move):
+        type = 0
+        for i, t in enumerate(list(move["type"].values())):
+            if t:
+                type = i + 1
+                break
         return np.array([
             move["base_power"],
-            move["accuracy"]
+            move["accuracy"],
+            type
         ])
 
+
     def pokemon_to_feature(self, pokemon):
+        type = 0
+        for i, t in enumerate(list(pokemon["type"].values())):
+            if t:
+                type = i + 1
+                break
+
         return np.array([
             pokemon["stats"]["atk"], 
             pokemon["stats"]["def"], 
@@ -155,15 +164,16 @@ class PolicyNetwork(ModelManagerTF):
             pokemon["stats"]["spe"],
             pokemon["current_hp"],
             pokemon["max_hp"],
-            pokemon["level"]
+            pokemon["level"],
+            type
         ])
 
 
     def predict(self, observation):
         return self.sess.run(self.probs, feed_dict={self.tf_obs: observation})
 
-    # def predict_value(self, observation):
-    #     return self.sess.run(self.predicted_value, feed_dict={self.tf_obs: observation[np.newaxis, :]})
+    def predict_value(self, observation):
+        return self.sess.run(self.predicted_value, feed_dict={self.tf_obs: observation[np.newaxis, :]})
 
     def discounted_return(self, rewards, t_start=0):
         R = 0
@@ -174,8 +184,6 @@ class PolicyNetwork(ModelManagerTF):
         return R
 
     def update(self, observation, action, advantage):
-        if action == None: ## WHY NONE ACTIONS ????
-            return
         self.sess.run(
             self.train_step,
             feed_dict={
@@ -186,40 +194,70 @@ class PolicyNetwork(ModelManagerTF):
                 }
             )
 
-    # def update_value(self, observation, target):
-    #     self.sess.run(
-    #         self.train_step_value,
-    #         feed_dict={
-    #             self.tf_obs: observation[np.newaxis, :],
-    #             self.tf_target: target,
-    #             self.tf_learning_rate: self.learning_rate
-    #             }
-    #         )
+    def update_value(self, observation, target):
+        self.sess.run(
+            self.train_step_value,
+            feed_dict={
+                self.tf_obs: observation[np.newaxis, :],
+                self.tf_target: target,
+                self.tf_learning_rate: self.learning_rate
+                }
+            )
     
     def train(self, observations, actions, wins):
         for battle_id in observations.keys():
             obs = [self.format_x(el) for el in observations[battle_id]]
             act = actions[battle_id]
+            none_idx = np.where(np.array(act) != None)[0]
+            obs = [obs[i] for i in none_idx]
+            act = [act[i] for i in none_idx]
             if wins[battle_id]:
-                rwd = [100/len(obs)]*len(obs)
+                # rwd = [1] * len(obs)
+                # rwd = [100/len(obs)]*len(obs)
+                bonus = 1
+                # for pokemon in observations[battle_id][-1]["back"]:
+                #     bonus += int(pokemon["current_hp"] > 0)
+                # rwd = [bonus]*len(obs)
             else:
-                rwd = [len(obs)/100]*len(obs) 
+                rwd = [0] * len(obs)
+                # rwd = [len(obs)/100]*len(obs) 
+            rwd = self.observations_to_reward(observations[battle_id], actions[battle_id])
             self.reinforce(obs, act, rwd)
+        self.save(name="length_reward_hp")
+
+    def observations_to_reward(self, observations, actions):
+        rewards = [0]*len(actions)
+        for i, observation in enumerate(observations):
+            if i==0:
+                rewards[i] = 0
+            else:
+                hp = self.sum_hp(observation["back"])
+                hp_o = self.sum_hp(observation["opponent_back"])
+                prev_hp = self.sum_hp(observations[i-1]["back"])
+                prev_hp_o = self.sum_hp(observations[i-1]["opponent_back"])
+                rewards[i] = hp_o - prev_hp_o - (hp - prev_hp)
+        return rewards
+
+    def sum_hp(self, back):
+        hp = 0
+        for pokemon in back:
+            try:
+                hp += pokemon["current_hp"]
+            except:
+                pass
+        return hp
 
     def reinforce(self, observations, actions, rewards):
-        for t in range(len(actions)):
+        for t, obs in enumerate(observations):
             R = self.discounted_return(rewards, t_start=t)
-            advantage = R
-            
-            # Value network
-            # b = self.predict_value(self.ep_obs[t])
-            # advantage = R - b
-            # # Update value network
-            # self.update_value(self.ep_obs[t], target=R)
-            # Exercice 4: Critic
-
+            # Value Network
+            # baseline = self.predict_value(obs)
+            baseline = 0
+            advantage = R - baseline
+            # Update value network
+            # self.update_value(obs, target=R)
             # Update policy network
-            self.update(observations[t], actions[t], advantage)
+            self.update(obs, actions[t], advantage)
         # Learning rate decay
         self.learning_rate = max(
             self.decay * self.learning_rate, self.min_learning_rate)

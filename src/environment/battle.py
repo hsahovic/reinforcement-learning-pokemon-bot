@@ -146,7 +146,6 @@ class Battle:
 
         self._wait = False
 
-        # self._recorded_moves = {"context": [], "decision": []}
 
     def _get_pokemon_from_reference(self, reference: str) -> Pokemon:
         """Returns a pokemon from a reference
@@ -378,20 +377,6 @@ class Battle:
         """
         self._player_role = "p2"
 
-    # def record_move(self, context, move: int) -> None:
-    #     """
-    #     Record move information in the battle.
-
-    #     Args:
-    #         context (arbitrary): the information regarding the context that led to the
-    #         move choice that we want to store. From a ML point of view, it corresponds
-    #         to the input x.
-            
-    #         move (int): choice id. From a ML point of view, it corresponds to the output
-    #         y.
-    #     """
-    #     self._recorded_moves["context"].append(context)
-    #     self._recorded_moves["decision"].append(move)
 
     def won_by(self, winner: str) -> None:
         """
@@ -509,12 +494,6 @@ class Battle:
         """
         return (self._player_role is not None) and self._player_team
 
-    # @property
-    # def moves_data(self) -> dict:
-    #     """
-    #     dict: stored moves information
-    #     """
-    #     return self._recorded_moves
 
     @property
     def opponent_active_pokemon(self) -> Pokemon:
@@ -562,15 +541,6 @@ class Battle:
         """
         return self._wait
 
-    # @property
-    # def winning_moves_data(self) -> dict:
-    #     """
-    #     dict: stored winning moves information
-    #     """
-    #     if self._won:
-    #         return self.recorded_moves
-    #     else:
-    #         return {"context": [], "decision": []}
 
     @property
     def won(self) -> bool:

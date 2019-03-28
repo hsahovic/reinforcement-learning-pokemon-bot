@@ -1,0 +1,2 @@
+model_checkpoint_path: "length_reward_hp"
+all_model_checkpoint_paths: "length_reward_hp"

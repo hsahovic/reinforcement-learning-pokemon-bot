@@ -24,6 +24,7 @@ import os
 import time
 
 import matplotlib.pyplot as plt
+plt.style.use("ggplot")
 
 class ModelManagerTF(ABC):
 
@@ -33,8 +34,9 @@ class ModelManagerTF(ABC):
         """
         This method should be rewritten when inherited.
 
-        You need to define and compile a keras model under the attribute self.model.
+        You need to define and compile a TF model.
         """
+        self.sess = None
         pass
 
     def feed(self, x: dict) -> Tuple[np.array, np.array]:
@@ -121,34 +123,40 @@ class ModelManagerTF(ABC):
 
         del players
 
-    # def load(self, name=None) -> None:
-    #     """
-    #     Loads a model.
+    def close(self) -> None:
+        """
+        Closes TF session
+        """
+        self.sess.close()
 
-    #     If a name is given, it will be fetched in the models directory.
-    #     Otherwise, the last model will be loaded.
+    def load(self, name=None) -> None:
+        """
+        Loads a model.
 
-    #     Args:
-    #         name (str, defaults to None): name of the model to be loaded. If None, the 
-    #         last saved model will be used.
-    #     """
-    #     if self.MODEL_NAME is None:
-    #         raise ValueError(
-    #             """self.MODEL_NAME is None. Are you sure you initialised your 
-    #         model with a name attribute ?
-    #     """
-    #         )
-    #     if name:
-    #         if not os.path.isdir(os.path.join("models", self.MODEL_NAME)):
-    #             raise ValueError("No models to load were found.")
-    #         else:
-    #             self.model = load_model(os.path.join("models", self.MODEL_NAME, name))
-    #     else:
-    #         models = os.listdir(os.path.join("models", self.MODEL_NAME))
-    #         if models:
-    #             self.load(sorted(models)[-1])
-    #         else:
-    #             raise ValueError("No models to load were found.")
+        If a name is given, it will be fetched in the models directory.
+        Otherwise, the last model will be loaded.
+
+        Args:
+            name (str, defaults to None): name of the model to be loaded. If None, the 
+            last saved model will be used.
+        """
+        if self.MODEL_NAME is None:
+            raise ValueError(
+                """self.MODEL_NAME is None. Are you sure you initialised your 
+            model with a name attribute ?
+        """
+            )
+        if not os.path.isdir(os.path.join("models", self.MODEL_NAME)):
+            raise ValueError("No models to load were found.")
+        
+        if name:
+            tf.train.Saver().restore(self.sess, os.path.join("models", self.MODEL_NAME, name))
+        else:
+            models = os.listdir(os.path.join("models", self.MODEL_NAME))
+            if models:
+                tf.train.Saver().restore(self.sess, tf.train.latest_checkpoint(os.path.join("models", self.MODEL_NAME)))
+            else:
+                raise ValueError("No models to load were found.")
 
     def get_player(
         self,
@@ -183,23 +191,15 @@ class ModelManagerTF(ABC):
             to_target=to_target,
         )
 
-    # def train(self, x, y: int) -> None:
-    #     """
-    #     Trains the model on x, y.
-
-    #     Args:
-    #         x: raw input data to be used with self.format
-
-    #         y: move choices, as integers
-    #     """
-    #     x = np.array([self.format_x(el) for el in x])
-    #     y_t = np.zeros(shape=(len(y), 20))
-    #     for i, val in enumerate(y):
-    #         y_t[i, val] = 1
-    #     self.model.fit(x, y_t, epochs=3, batch_size=64) # validation_split=.1
-    #     if not os.path.isdir(os.path.join("models", self.MODEL_NAME)):
-    #         os.makedirs(os.path.join("models", self.MODEL_NAME))
-    #     self.model.save(os.path.join("models", self.MODEL_NAME, f"{time.time()}.model"))
+    def save(self, name=None) -> None:
+        """ 
+        Save current model
+        """
+        if name == None:
+            name = str(int(time.time()))
+        if not os.path.isdir(os.path.join("models", self.MODEL_NAME)):
+            os.makedirs(os.path.join("models", self.MODEL_NAME))
+        tf.train.Saver().save(self.sess, os.path.join("models", self.MODEL_NAME, name))
 
     @abstractmethod
     def predict(self, x):
@@ -293,7 +293,9 @@ class ModelManagerTF(ABC):
         iterations=5,
         number_of_battles=100,
         concurrent_battles=10,
+        testing_step=1,
         log_messages=True,
+        display=True
     ):
         """
         Trains the model with data gathered from self vs. self battles.
@@ -339,6 +341,7 @@ class ModelManagerTF(ABC):
                     username=CONFIG["users"][1]["username"],
                 ),
             ]
+
             to_await = []
             for player in players:
                 to_await.append(asyncio.ensure_future(player.listen()))
@@ -355,21 +358,27 @@ class ModelManagerTF(ABC):
                     player.actions,
                     player.wins
                 )
+            if (i+1)%testing_step == 0:
+                print(f"{'-'*10} Testing {'-'*10}")
+                perf = await self.test(number_of_battles=20)
+                perf_record.append(perf)
+                print(f"\n{'*'*15} Performance: {perf*100:2.1f}% {'*'*15}\n")
             
-            print(f"{'-'*10} Testing {'-'*10}")
-            perf = await self.test(number_of_battles=20)
-            perf_record.append(perf)
-            print(f"\n{'*'*15} Performance: {perf*100:2.1f}% {'*'*15}\n")
-
             del players
-
-        plt.plot(range(iterations+1), perf_record)
-        plt.xlim([0, iterations])
-        plt.ylim([0,1])
-        plt.xlabel("Number of iterations")
-        plt.ylabel("Performance")
-        plt.savefig("perf.png")
-        plt.show()
+        
+        if display:
+            window = 5
+            sliding_perf = [np.average(perf_record[max(0,i-window):i+1]) for i in range(len(perf_record))]
+            plt.plot(np.array(range(len(perf_record)))*testing_step, sliding_perf, color='blue')
+            plt.plot(np.array(range(len(perf_record)))*testing_step, [0.5]*len(perf_record), color='red', ls='--')
+            plt.xlim([0, iterations])
+            plt.ylim([0,1])
+            plt.xlabel("Number of iterations")
+            plt.ylabel("Performance")
+            plt.savefig("perf.png")
+            plt.show()
+        
+        self.close()
 
 
 class _MLRandomBattlePlayer(Player):
