@@ -8,7 +8,7 @@ async def main():
     # Load latest model
     # model_manager.load()
     await model_manager.self_training(
-        number_of_battles=1, concurrent_battles=1, log_messages=False, iterations=20, testing_step=2
+        number_of_battles=1, concurrent_battles=1, log_messages=False, iterations=20, testing_step=5
     )
 
 

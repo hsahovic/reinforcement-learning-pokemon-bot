@@ -5,7 +5,7 @@ from players.policy_network import PolicyNetwork
 async def main():
     model_manager = PolicyNetwork()
     # Load model
-    model_manager.load()
+    model_manager.load("hp")
 
     print(f"{'-'*10} Testing {'-'*10}")
     perf = await model_manager.test(number_of_battles=20)
