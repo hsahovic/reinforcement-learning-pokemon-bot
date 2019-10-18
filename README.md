@@ -1,6 +1,8 @@
-This repo corresponds to a group project in a RL class at [Ecole Polytechnique](https://www.polytechnique.edu). It is depreciated. 
+This repo corresponds to a group project in a RL class at [Ecole Polytechnique](https://www.polytechnique.edu). **It is depreciated.**
 
 The environment developed during this project gave birth to [poke-env](https://github.com/hsahovic/poke-env/), an Open Source environment for RL Pokemons bots, which is currently being developed.
+
+___
 
 # inf581-project
 
